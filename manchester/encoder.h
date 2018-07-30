@@ -75,7 +75,7 @@ public:
         }
         // Send the stop condition
         _output_pin = 1;
-        wait_us(_half_bit_time*4);
+        wait_us(2400);
         core_util_critical_section_exit();
     } 
 
@@ -117,7 +117,7 @@ private:
             _input_pin.fall(callback(this, &ManchesterEncoder::irq_handler));
         }
         // Start a timer to check for stop condition
-        t2.attach_us(callback(this, &ManchesterEncoder::stop), 7*(float)_half_bit_time);
+        t2.attach_us(callback(this, &ManchesterEncoder::stop), _half_bit_time + 2400);
     }
  
     void fall_handler() {
