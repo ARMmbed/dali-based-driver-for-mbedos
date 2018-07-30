@@ -40,11 +40,15 @@ public:
     int recv() {
         // -1 means no data ready in timeout period
         int ret = -1; 
+        // Wait for timeout between response
+        wait_us(2400);
+        // Calculate timer stop time, 9 recv bits, stop condition, half bit extra
+        int stop_time = (_half_bit_time*2*9) + 2400 + _half_bit_time;
         // Start a timer
         Timer t;
         t.start();
-        // While there is no data
-        while(!data_ready && t.read() < 1) {};
+        // While reading data
+        while(rx_in_progress && t.read_us() < stop_time) {};
         t.stop();
         if(data_ready) {
             //If there is data, clear our buffer
