@@ -43,8 +43,8 @@ public:
         // Start a timer
         Timer t;
         t.start();
-        // While there is no data and timer is less than stop condition period
-        while(!data_ready && t.read_us() < 2450) {};
+        // While there is no data
+        while(!data_ready && t.read() < 1) {};
         t.stop();
         if(data_ready) {
             //If there is data, clear our buffer
@@ -106,8 +106,8 @@ private:
 
     void read_state() {
         int state = _input_pin.read();
-        if (bit_count < 15) {
-            uint16_t mask = !((bool)state) << (15-bit_count++);
+        if (bit_count < 7) {
+            uint8_t mask = !((bool)state) << (7-bit_count++);
             recv_data |= mask;
         }
         if (state == 0) {
@@ -135,7 +135,7 @@ private:
     InterruptIn _input_pin;
     // Half the time for each bit (1/(2*baud)) 
     int _half_bit_time;
-    volatile uint16_t recv_data;
+    volatile uint8_t recv_data;
     volatile uint8_t bit_count;
     volatile bool rx_in_progress;
     Timeout t1;
