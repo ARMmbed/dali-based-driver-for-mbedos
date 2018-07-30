@@ -35,10 +35,22 @@ public:
         data_ready = false;
         _input_pin.fall(callback(this, &ManchesterEncoder::fall_handler));
     }
-    
-    uint16_t recv() {
-        uint16_t ret = recv_data;
-        recv_data = 0;
+   
+    // Blocking receive call 
+    int recv() {
+        // -1 means no data ready in timeout period
+        int ret = -1; 
+        // Start a timer
+        Timer t;
+        t.start();
+        // While there is no data and timer is less than stop condition period
+        while(!data_ready && t.read_us() < 2450) {};
+        t.stop();
+        if(data_ready) {
+            //If there is data, clear our buffer
+            ret = recv_data;
+            recv_data = 0;
+        }
         return ret;
     }
     
