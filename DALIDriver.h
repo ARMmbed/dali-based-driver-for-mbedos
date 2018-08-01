@@ -53,6 +53,8 @@ public:
      *  @param idle_state   The default state of the line (high for DALI) 
      */
     DALIDriver(PinName out_pin, PinName in_pin, int baud = 1200, bool idle_state = 1);
+    
+    ~DALIDriver();
 
     /** Initialise the driver 
     *
@@ -68,6 +70,12 @@ public:
     *
     */ 
     void send_command(uint8_t address, uint8_t opcode);
+
+    struct LightUnit {
+        uint8_t addr;
+    };
+    // Array of lights on bus
+    LightUnit* lights;
 
 private:
 

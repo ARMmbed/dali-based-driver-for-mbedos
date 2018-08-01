@@ -21,6 +21,11 @@ DALIDriver::DALIDriver(PinName out_pin, PinName in_pin, int baud, bool idle_stat
 {
 }
 
+DALIDriver::~DALIDriver() 
+{
+    delete [] lights;
+}
+
 void DALIDriver::send_command(uint8_t address, uint8_t opcode) 
 {
     encoder.send((address << 8) | opcode);
@@ -51,6 +56,12 @@ bool DALIDriver::init()
 {
     // TODO: does this need to happen every time controller boots?
     num_logical_units = assign_addresses();
+    lights = new LightUnit[num_logical_units];
+    for(uint8_t i = 0; i < num_logical_units; i++) {
+        LightUnit light;
+        light.addr = (i << 1) + 1;
+        lights[i] = light;
+    }
     return (num_logical_units != 0);
 }
     
