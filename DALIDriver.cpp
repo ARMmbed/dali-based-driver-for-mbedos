@@ -61,10 +61,28 @@ bool DALIDriver::remove_from_group(LightUnit* light, uint8_t group)
 }
 
 bool DALIDriver::set_level(LightUnit* light, uint8_t level) {
-    // Change address to have 0 in LSb to signify 'direct arc power
+    // Change address to have 0 in LSb to signify 'direct arc power'
     uint8_t addr = light->addr & 0xFE;
     // Set the level of the light, will fade using programmed fade settings
     send_command(addr, level);
+}
+
+void DALIDriver::turn_off(LightUnit* light) {
+    send_command(light->addr, OFF);
+}
+
+void DALIDriver::set_fade_time(LightUnit* light, uint8_t time) {
+    send_command(DTR0, time);
+    // Send twice command
+    send_command(light->addr, SET_FADE_TIME); 
+    send_command(light->addr, SET_FADE_TIME); 
+}
+
+void DALIDriver::set_fade_rate(LightUnit* light, uint8_t rate) {
+    send_command(DTR0, rate);
+    // Send twice command
+    send_command(light->addr, SET_FADE_RATE); 
+    send_command(light->addr, SET_FADE_RATE); 
 }
 
 void DALIDriver::send_command(uint8_t address, uint8_t opcode) 

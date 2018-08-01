@@ -40,14 +40,20 @@ enum SpecialCommandOpAddr {
 enum CommandOpCodes {
     ADD_TO_GROUP = 0x60,
     REMOVE_FROM_GROUP = 0x70,
-    SET_SCENE = 0x40,
     REMOVE_FROM_SCENE = 0x50,
     GO_TO_SCENE = 0x10,
     OFF = 0x00,
     ON_AND_STEP_UP = 0x08,
     QUERY_GEAR_GROUPS_L = 0xC0, // get lower byte of gear groups status
     QUERY_GEAR_GROUPS_H = 0xC1, // get upper byte of gear groups status
-    READ_MEM_LOC = 0xC5
+    READ_MEM_LOC = 0xC5,
+    
+    // Commands below are "send twice"
+    SET_SCENE = 0x40,
+    SET_FADE_TIME = 0x2E,
+    SET_FADE_RATE = 0x2F,
+    SET_MIN_LEVEL = 0x2B,
+    SET_MAX_LEVEL = 0x2A
 };
 
 #define YES 0xFF
@@ -87,6 +93,9 @@ public:
     bool add_to_group(LightUnit* light, uint8_t group);
     bool remove_from_group(LightUnit* light, uint8_t group);
     bool set_level(LightUnit* light, uint8_t level);
+    void turn_off(LightUnit* light);
+    void set_fade_rate(LightUnit* light, uint8_t rate);
+    void set_fade_time(LightUnit* light, uint8_t time);
 
     /** Send a command on the bus 
     *
