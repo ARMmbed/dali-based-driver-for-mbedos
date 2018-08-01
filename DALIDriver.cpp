@@ -23,7 +23,6 @@ DALIDriver::DALIDriver(PinName out_pin, PinName in_pin, int baud, bool idle_stat
 
 DALIDriver::~DALIDriver() 
 {
-    delete [] lights;
 }
 
 bool DALIDriver::add_to_group(uint8_t addr, uint8_t group)
@@ -143,13 +142,6 @@ bool DALIDriver::init()
 {
     // TODO: does this need to happen every time controller boots?
     num_logical_units = assign_addresses();
-    lights = new uint8_t[num_logical_units];
-    for(uint8_t i = 0; i < num_logical_units; i++) {
-        // This makes address always for 'standard command' not for 'direct arc power'
-        // section 7.7.2 of 102 spec
-        uint8_t addr = (i << 1) + 1;
-        lights[i] = addr;
-    }
     return (num_logical_units != 0);
 }
     

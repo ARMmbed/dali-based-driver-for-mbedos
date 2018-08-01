@@ -108,10 +108,6 @@ public:
     void send_twice(uint8_t addr, uint8_t opcode);
     uint8_t get_group_addr(uint8_t group_number);
 
-
-    // Array of addresses of lights on bus
-    uint8_t* lights;
-
 private:
 
     /** Assign addresses to the logical units on the bus 
