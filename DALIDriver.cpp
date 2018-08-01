@@ -58,7 +58,7 @@ bool DALIDriver::init()
 int DALIDriver::assign_addresses() 
 {
     int searchCompleted = false;
-    int numAssignedShortAddresses = 0;
+    uint8_t numAssignedShortAddresses = 0;
     int assignedAddresses[63] = {false}; 
     int highestAssigned = -1;
     send_command(DTR0, 0xFF);
@@ -99,24 +99,23 @@ int DALIDriver::assign_addresses()
             send_command(COMPARE, 0x00);
             bool yes = check_response(YES);
             if (yes) {
-                // We found a unit, let's program the short address with its index
+                // We found a unit, let's program the short address with a new address
                 // Give it a temporary short address
                 send_command(PROGRAM_SHORT_ADDR, (63 << 1) + 1);
-                // Find the index
-                int index = getIndexOfLogicalUnit(63);
-                if (index < 63) {
-                    if (assignedAddresses[index] == true) {
+                uint8_t new_addr = numAssignedShortAddresses;
+                if (new_addr < 63) {
+                    if (assignedAddresses[new_addr] == true) {
                         // Duplicate addr?
                     }   
                     else {
-                        // Program index as short address
-                        send_command(PROGRAM_SHORT_ADDR, (index << 1) + 1);
+                        // Program new address as short address
+                        send_command(PROGRAM_SHORT_ADDR, (new_addr << 1) + 1);
                         // Tell unit to withdraw (no longer respond to search queries)
                         send_command(WITHDRAW, 0x00);
                         numAssignedShortAddresses++;
-                        assignedAddresses[index] = true;
-                        if(index > highestAssigned) 
-                            highestAssigned = index;
+                        assignedAddresses[new_addr] = true;
+                        if(new_addr > highestAssigned) 
+                            highestAssigned = new_addr;
                     }
                 }
                 else {

@@ -75,7 +75,8 @@ private:
     *
     *   @returns    The number of logical units found on bus
     *
-    *   NOTE: This process is copied from page 82 of iec62386-102
+    *   NOTE: This process is mostly copied from page 82 of iec62386-102
+    *   The addresses will be in the range [0, number units - 1]
     */ 
     int assign_addresses();
 
