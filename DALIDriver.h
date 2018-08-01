@@ -60,11 +60,9 @@ public:
         uint8_t fadeTime;
         uint8_t lampOn;
         uint8_t actualLevel;
-        bool gearGroups[16];
         uint8_t fadeRate;
         // physical minimum level corresponding to the minimum light output the control gear can operate at
         uint8_t PHM;
-        bool scenes[16];
     };
 
     /** Constructor DALIDriver
@@ -85,7 +83,10 @@ public:
     */
     bool init();
 
+    
     bool add_to_group(LightUnit* light, uint8_t group);
+    bool remove_from_group(LightUnit* light, uint8_t group);
+    bool set_level(LightUnit* light, uint8_t level);
 
     /** Send a command on the bus 
     *

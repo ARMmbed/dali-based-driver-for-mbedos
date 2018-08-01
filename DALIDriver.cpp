@@ -39,9 +39,32 @@ bool DALIDriver::add_to_group(LightUnit* light, uint8_t group)
     // Group bit will be set if this light is a memeber of that group
     uint8_t mask = 1 << group;
     bool contained = resp & mask;
-    light->gearGroups[group] = contained;
     // Return whether light is part of group
     return contained;
+}
+
+bool DALIDriver::remove_from_group(LightUnit* light, uint8_t group)
+{
+    // Send the command to remove from group
+    send_command(light->addr, REMOVE_FROM_GROUP + group);
+    // Query upper or lower bits of gearGroups 16 bit variable
+    uint8_t cmd = group < 8 ? QUERY_GEAR_GROUPS_L : QUERY_GEAR_GROUPS_H;
+    // Send query command
+    send_command(light->addr, cmd);
+    // Receive gearGroups variable
+    uint8_t resp = encoder.recv(); 
+    // Group bit will be set if this light is a memeber of that group
+    uint8_t mask = 1 << group;
+    bool contained = resp & mask;
+    // Return whether light is not part of group
+    return !contained;
+}
+
+bool DALIDriver::set_level(LightUnit* light, uint8_t level) {
+    // Change address to have 0 in LSb to signify 'direct arc power
+    uint8_t addr = light->addr & 0xFE;
+    // Set the level of the light, will fade using programmed fade settings
+    send_command(addr, level);
 }
 
 void DALIDriver::send_command(uint8_t address, uint8_t opcode) 
