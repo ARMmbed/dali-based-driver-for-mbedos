@@ -38,9 +38,6 @@ enum SpecialCommandOpAddr {
 
 // Command op codes 
 enum CommandOpCodes {
-    ADD_TO_GROUP = 0x60,
-    REMOVE_FROM_GROUP = 0x70,
-    REMOVE_FROM_SCENE = 0x50,
     GO_TO_SCENE = 0x10,
     OFF = 0x00,
     ON_AND_STEP_UP = 0x08,
@@ -53,6 +50,9 @@ enum CommandOpCodes {
     SET_FADE_TIME = 0x2E,
     SET_FADE_RATE = 0x2F,
     SET_MIN_LEVEL = 0x2B,
+    REMOVE_FROM_SCENE = 0x50,
+    REMOVE_FROM_GROUP = 0x70,
+    ADD_TO_GROUP = 0x60,
     SET_MAX_LEVEL = 0x2A
 };
 
@@ -90,13 +90,6 @@ public:
     bool init();
 
     
-    bool add_to_group(LightUnit* light, uint8_t group);
-    bool remove_from_group(LightUnit* light, uint8_t group);
-    bool set_level(LightUnit* light, uint8_t level);
-    void turn_off(LightUnit* light);
-    void set_fade_rate(LightUnit* light, uint8_t rate);
-    void set_fade_time(LightUnit* light, uint8_t time);
-
     /** Send a command on the bus 
     *
     *   @param address     The address byte for command
@@ -104,6 +97,18 @@ public:
     *
     */ 
     void send_command(uint8_t address, uint8_t opcode);
+
+    bool add_to_group(LightUnit* light, uint8_t group);
+    bool remove_from_group(LightUnit* light, uint8_t group);
+    void set_level(LightUnit* light, uint8_t level);
+    void turn_off(LightUnit* light);
+    void set_fade_rate(LightUnit* light, uint8_t rate);
+    void set_fade_time(LightUnit* light, uint8_t time);
+    void set_scene(LightUnit* light, uint8_t scene);
+    void remove_from_scene(LightUnit* light, uint8_t scene);
+    void go_to_scene(LightUnit* light, uint8_t scene);
+    void send_twice(uint8_t addr, uint8_t opcode);
+
 
     // Array of lights on bus
     LightUnit* lights;

@@ -33,7 +33,7 @@ bool DALIDriver::add_to_group(LightUnit* light, uint8_t group)
     // Query upper or lower bits of gearGroups 16 bit variable
     uint8_t cmd = group < 8 ? QUERY_GEAR_GROUPS_L : QUERY_GEAR_GROUPS_H;
     // Send query command
-    send_command(light->addr, cmd);
+    send_twice(light->addr, cmd);
     // Receive gearGroups variable
     uint8_t resp = encoder.recv(); 
     // Group bit will be set if this light is a memeber of that group
@@ -50,7 +50,7 @@ bool DALIDriver::remove_from_group(LightUnit* light, uint8_t group)
     // Query upper or lower bits of gearGroups 16 bit variable
     uint8_t cmd = group < 8 ? QUERY_GEAR_GROUPS_L : QUERY_GEAR_GROUPS_H;
     // Send query command
-    send_command(light->addr, cmd);
+    send_twice(light->addr, cmd);
     // Receive gearGroups variable
     uint8_t resp = encoder.recv(); 
     // Group bit will be set if this light is a memeber of that group
@@ -60,7 +60,7 @@ bool DALIDriver::remove_from_group(LightUnit* light, uint8_t group)
     return !contained;
 }
 
-bool DALIDriver::set_level(LightUnit* light, uint8_t level) {
+void DALIDriver::set_level(LightUnit* light, uint8_t level) {
     // Change address to have 0 in LSb to signify 'direct arc power'
     uint8_t addr = light->addr & 0xFE;
     // Set the level of the light, will fade using programmed fade settings
@@ -71,18 +71,35 @@ void DALIDriver::turn_off(LightUnit* light) {
     send_command(light->addr, OFF);
 }
 
+void DALIDriver::send_twice(uint8_t addr, uint8_t opcode) { 
+    send_command(addr, opcode);
+}
+
 void DALIDriver::set_fade_time(LightUnit* light, uint8_t time) {
     send_command(DTR0, time);
     // Send twice command
-    send_command(light->addr, SET_FADE_TIME); 
-    send_command(light->addr, SET_FADE_TIME); 
+    send_twice(light->addr, SET_FADE_TIME); 
 }
 
 void DALIDriver::set_fade_rate(LightUnit* light, uint8_t rate) {
     send_command(DTR0, rate);
     // Send twice command
-    send_command(light->addr, SET_FADE_RATE); 
-    send_command(light->addr, SET_FADE_RATE); 
+    send_twice(light->addr, SET_FADE_RATE); 
+}
+
+void DALIDriver::set_scene(LightUnit* light, uint8_t scene) {
+    send_command(DTR0, scene);
+    // Send twice command
+    // TODO: Do we really need to set DTR0? Pg. 50 spec 102
+    send_twice(light->addr, SET_SCENE + scene); 
+}
+
+void DALIDriver::remove_from_scene(LightUnit* light, uint8_t scene) {
+    send_twice(light->addr, REMOVE_FROM_SCENE + scene);
+}
+
+void DALIDriver::go_to_scene(LightUnit* light, uint8_t scene) {
+    send_twice(light->addr, GO_TO_SCENE + scene);
 }
 
 void DALIDriver::send_command(uint8_t address, uint8_t opcode) 
