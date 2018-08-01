@@ -87,8 +87,8 @@ void DALIDriver::set_fade_rate(LightUnit* light, uint8_t rate) {
     send_twice(light->addr, SET_FADE_RATE); 
 }
 
-void DALIDriver::set_scene(LightUnit* light, uint8_t scene) {
-    send_command(DTR0, scene);
+void DALIDriver::set_scene(LightUnit* light, uint8_t scene, uint8_t level) {
+    send_command(DTR0, level);
     // Send twice command
     // TODO: Do we really need to set DTR0? Pg. 50 spec 102
     send_twice(light->addr, SET_SCENE + scene); 
