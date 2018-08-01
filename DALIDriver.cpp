@@ -62,7 +62,9 @@ int DALIDriver::assign_addresses()
     int assignedAddresses[63] = {false}; 
     int highestAssigned = -1;
     send_command(DTR0, 0xFF);
+    // Start initialization phase
     send_command(INITIALISE, 0x00);
+    // Assign all units a random address
     send_command(RANDOMISE, 0x00);
     wait_ms(100);
     
@@ -73,7 +75,7 @@ int DALIDriver::assign_addresses()
         send_command(COMPARE, 0x00);
         // Check if any device responds yes
         bool yes = check_response(YES);       
-        // If no devices are unassigned, we are done
+        // If no devices are unassigned (all withdrawn), we are done
         if (!yes) {
             return numAssignedShortAddresses;
         }
@@ -82,8 +84,10 @@ int DALIDriver::assign_addresses()
             for(int i = 23; i>=0; i--) {
                 uint32_t mask = 1 << i;
                 searchAddr = searchAddr & (~mask);
+                // Set a new search address
                 set_search_address(searchAddr);
                 send_command(COMPARE, 0x00);
+                // Check if any devices match
                 bool yes = check_response(YES);
                 if(!yes) {
                     //No unit here, revert the mask
@@ -107,7 +111,7 @@ int DALIDriver::assign_addresses()
                     else {
                         // Program index as short address
                         send_command(PROGRAM_SHORT_ADDR, (index << 1) + 1);
-                        // Tell unit to withdraw
+                        // Tell unit to withdraw (no longer respond to search queries)
                         send_command(WITHDRAW, 0x00);
                         numAssignedShortAddresses++;
                         assignedAddresses[index] = true;

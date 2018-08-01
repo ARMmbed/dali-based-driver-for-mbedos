@@ -61,6 +61,14 @@ public:
     */
     bool init();
 
+    /** Send a command on the bus 
+    *
+    *   @param address     The address byte for command
+    *   @param opcode      The opcode byte 
+    *
+    */ 
+    void send_command(uint8_t address, uint8_t opcode);
+
 private:
 
     /** Assign addresses to the logical units on the bus 
@@ -73,22 +81,13 @@ private:
 
     /** Set the controller search address 
     * This address will be used in search commands to determine what 
-    * control units this address or a numerically lower address
+    * control units have this address or a numerically lower address
     *
     *   @param val    Search address valued (only lower 24 bits are used)
     *
     */ 
     void set_search_address(uint32_t val);
 
-    /** Send a command on the bus 
-    *
-    *   @param address     The address byte for command
-    *   @param opcode      The opcode byte 
-    *
-    */ 
-    void send_command(uint8_t address, uint8_t opcode);
-
-    
     /** Check the response from the bus 
     *
     *   @param expected    Expected response from the bus
