@@ -28,8 +28,20 @@ DALIDriver::~DALIDriver()
 
 bool DALIDriver::add_to_group(LightUnit* light, uint8_t group)
 {
+    // Send the command to add to group
     send_command(light->addr, ADD_TO_GROUP + group);
-    light->gearGroups[group] = true;
+    // Query upper or lower bits of gearGroups 16 bit variable
+    uint8_t cmd = group < 8 ? QUERY_GEAR_GROUPS_L : QUERY_GEAR_GROUPS_H;
+    // Send query command
+    send_command(light->addr, cmd);
+    // Receive gearGroups variable
+    uint8_t resp = encoder.recv(); 
+    // Group bit will be set if this light is a memeber of that group
+    uint8_t mask = 1 << group;
+    bool contained = resp & mask;
+    light->gearGroups[group] = contained;
+    // Return whether light is part of group
+    return contained;
 }
 
 void DALIDriver::send_command(uint8_t address, uint8_t opcode) 

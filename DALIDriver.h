@@ -45,6 +45,8 @@ enum CommandOpCodes {
     GO_TO_SCENE = 0x10,
     OFF = 0x00,
     ON_AND_STEP_UP = 0x08,
+    QUERY_GEAR_GROUPS_L = 0xC0, // get lower byte of gear groups status
+    QUERY_GEAR_GROUPS_H = 0xC1, // get upper byte of gear groups status
     READ_MEM_LOC = 0xC5
 };
 
