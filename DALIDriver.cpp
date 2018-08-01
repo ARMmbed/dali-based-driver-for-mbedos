@@ -135,7 +135,8 @@ void DALIDriver::set_search_address(uint32_t val)
 uint8_t DALIDriver::get_group_addr(uint8_t group_number)
 {
     uint8_t mask = 1 << 7;
-    return mask | ((group_number << 1) + 1);
+    // Make MSb a 1 to signify >1 device being addressed
+    return mask | group_number;
 }
 
 bool DALIDriver::init() 
