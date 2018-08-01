@@ -60,12 +60,6 @@ enum CommandOpCodes {
 
 class DALIDriver {
 public:
-    // Variables stored in light unit (page 47,Table 14 of iec62386-102
-    struct LightUnit {
-        uint8_t addr;
-        // physical minimum level corresponding to the minimum light output the control gear can operate at
-        uint8_t PHM;
-    };
 
     /** Constructor DALIDriver
      *
@@ -94,20 +88,20 @@ public:
     */ 
     void send_command(uint8_t address, uint8_t opcode);
 
-    bool add_to_group(LightUnit* light, uint8_t group);
-    bool remove_from_group(LightUnit* light, uint8_t group);
-    void set_level(LightUnit* light, uint8_t level);
-    void turn_off(LightUnit* light);
-    void set_fade_rate(LightUnit* light, uint8_t rate);
-    void set_fade_time(LightUnit* light, uint8_t time);
-    void set_scene(LightUnit* light, uint8_t scene, uint8_t level);
-    void remove_from_scene(LightUnit* light, uint8_t scene);
-    void go_to_scene(LightUnit* light, uint8_t scene);
+    bool add_to_group(uint8_t addr, uint8_t group);
+    bool remove_from_group(uint8_t addr, uint8_t group);
+    void set_level(uint8_t addr, uint8_t level);
+    void turn_off(uint8_t addr);
+    void set_fade_rate(uint8_t addr, uint8_t rate);
+    void set_fade_time(uint8_t addr, uint8_t time);
+    void set_scene(uint8_t addr, uint8_t scene, uint8_t level);
+    void remove_from_scene(uint8_t addr, uint8_t scene);
+    void go_to_scene(uint8_t addr, uint8_t scene);
     void send_twice(uint8_t addr, uint8_t opcode);
 
 
     // Array of lights on bus
-    LightUnit* lights;
+    uint8_t* lights;
 
 private:
 

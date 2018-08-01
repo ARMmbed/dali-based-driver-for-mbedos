@@ -26,14 +26,14 @@ DALIDriver::~DALIDriver()
     delete [] lights;
 }
 
-bool DALIDriver::add_to_group(LightUnit* light, uint8_t group)
+bool DALIDriver::add_to_group(uint8_t addr, uint8_t group)
 {
     // Send the command to add to group
-    send_command(light->addr, ADD_TO_GROUP + group);
+    send_command(addr, ADD_TO_GROUP + group);
     // Query upper or lower bits of gearGroups 16 bit variable
     uint8_t cmd = group < 8 ? QUERY_GEAR_GROUPS_L : QUERY_GEAR_GROUPS_H;
     // Send query command
-    send_twice(light->addr, cmd);
+    send_twice(addr, cmd);
     // Receive gearGroups variable
     uint8_t resp = encoder.recv(); 
     // Group bit will be set if this light is a memeber of that group
@@ -43,14 +43,14 @@ bool DALIDriver::add_to_group(LightUnit* light, uint8_t group)
     return contained;
 }
 
-bool DALIDriver::remove_from_group(LightUnit* light, uint8_t group)
+bool DALIDriver::remove_from_group(uint8_t addr, uint8_t group)
 {
     // Send the command to remove from group
-    send_command(light->addr, REMOVE_FROM_GROUP + group);
+    send_command(addr, REMOVE_FROM_GROUP + group);
     // Query upper or lower bits of gearGroups 16 bit variable
     uint8_t cmd = group < 8 ? QUERY_GEAR_GROUPS_L : QUERY_GEAR_GROUPS_H;
     // Send query command
-    send_twice(light->addr, cmd);
+    send_twice(addr, cmd);
     // Receive gearGroups variable
     uint8_t resp = encoder.recv(); 
     // Group bit will be set if this light is a memeber of that group
@@ -60,46 +60,45 @@ bool DALIDriver::remove_from_group(LightUnit* light, uint8_t group)
     return !contained;
 }
 
-void DALIDriver::set_level(LightUnit* light, uint8_t level) {
+void DALIDriver::set_level(uint8_t addr, uint8_t level) {
     // Change address to have 0 in LSb to signify 'direct arc power'
-    uint8_t addr = light->addr & 0xFE;
+    uint8_t addr_dapc = addr & 0xFE;
     // Set the level of the light, will fade using programmed fade settings
-    send_command(addr, level);
+    send_command(addr_dapc, level);
 }
 
-void DALIDriver::turn_off(LightUnit* light) {
-    send_command(light->addr, OFF);
+void DALIDriver::turn_off(uint8_t addr) {
+    send_command(addr, OFF);
 }
 
 void DALIDriver::send_twice(uint8_t addr, uint8_t opcode) { 
     send_command(addr, opcode);
 }
 
-void DALIDriver::set_fade_time(LightUnit* light, uint8_t time) {
+void DALIDriver::set_fade_time(uint8_t addr, uint8_t time) {
     send_command(DTR0, time);
     // Send twice command
-    send_twice(light->addr, SET_FADE_TIME); 
+    send_twice(addr, SET_FADE_TIME); 
 }
 
-void DALIDriver::set_fade_rate(LightUnit* light, uint8_t rate) {
+void DALIDriver::set_fade_rate(uint8_t addr, uint8_t rate) {
     send_command(DTR0, rate);
     // Send twice command
-    send_twice(light->addr, SET_FADE_RATE); 
+    send_twice(addr, SET_FADE_RATE); 
 }
 
-void DALIDriver::set_scene(LightUnit* light, uint8_t scene, uint8_t level) {
+void DALIDriver::set_scene(uint8_t addr, uint8_t scene, uint8_t level) {
     send_command(DTR0, level);
     // Send twice command
-    // TODO: Do we really need to set DTR0? Pg. 50 spec 102
-    send_twice(light->addr, SET_SCENE + scene); 
+    send_twice(addr, SET_SCENE + scene); 
 }
 
-void DALIDriver::remove_from_scene(LightUnit* light, uint8_t scene) {
-    send_twice(light->addr, REMOVE_FROM_SCENE + scene);
+void DALIDriver::remove_from_scene(uint8_t addr, uint8_t scene) {
+    send_twice(addr, REMOVE_FROM_SCENE + scene);
 }
 
-void DALIDriver::go_to_scene(LightUnit* light, uint8_t scene) {
-    send_twice(light->addr, GO_TO_SCENE + scene);
+void DALIDriver::go_to_scene(uint8_t addr, uint8_t scene) {
+    send_twice(addr, GO_TO_SCENE + scene);
 }
 
 void DALIDriver::send_command(uint8_t address, uint8_t opcode) 
@@ -132,13 +131,12 @@ bool DALIDriver::init()
 {
     // TODO: does this need to happen every time controller boots?
     num_logical_units = assign_addresses();
-    lights = new LightUnit[num_logical_units];
+    lights = new uint8_t[num_logical_units];
     for(uint8_t i = 0; i < num_logical_units; i++) {
-        LightUnit light;
         // This makes address always for 'standard command' not for 'direct arc power'
         // section 7.7.2 of 102 spec
-        light.addr = (i << 1) + 1;
-        lights[i] = light;
+        uint8_t addr = (i << 1) + 1;
+        lights[i] = addr;
     }
     return (num_logical_units != 0);
 }
