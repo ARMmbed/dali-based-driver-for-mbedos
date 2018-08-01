@@ -80,13 +80,21 @@ public:
     bool init();
 
     
-    /** Send a command on the bus 
+    /** Send a standard command on the bus 
     *
     *   @param address     The address byte for command
     *   @param opcode      The opcode byte 
     *
     */ 
-    void send_command(uint8_t address, uint8_t opcode);
+    void send_command_standard(uint8_t address, uint8_t opcode);
+
+    /** Send a direct arc power command on the bus 
+    *
+    *   @param address     The address byte for command
+    *   @param opcode      The opcode byte 
+    *
+    */ 
+    void send_command_direct(uint8_t address, uint8_t opcode);
 
     bool add_to_group(uint8_t addr, uint8_t group);
     bool remove_from_group(uint8_t addr, uint8_t group);
@@ -98,9 +106,10 @@ public:
     void remove_from_scene(uint8_t addr, uint8_t scene);
     void go_to_scene(uint8_t addr, uint8_t scene);
     void send_twice(uint8_t addr, uint8_t opcode);
+    uint8_t get_group_addr(uint8_t group_number);
 
 
-    // Array of lights on bus
+    // Array of addresses of lights on bus
     uint8_t* lights;
 
 private:
