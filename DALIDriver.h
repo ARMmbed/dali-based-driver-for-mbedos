@@ -38,6 +38,13 @@ enum SpecialCommandOpAddr {
 
 // Command op codes 
 enum CommandOpCodes {
+    ADD_TO_GROUP = 0x60,
+    REMOVE_FROM_GROUP = 0x70,
+    SET_SCENE = 0x40,
+    REMOVE_FROM_SCENE = 0x50,
+    GO_TO_SCENE = 0x10,
+    OFF = 0x00,
+    ON_AND_STEP_UP = 0x08,
     READ_MEM_LOC = 0xC5
 };
 
@@ -45,6 +52,19 @@ enum CommandOpCodes {
 
 class DALIDriver {
 public:
+    // Variables stored in light unit (page 47,Table 14 of iec62386-102
+    struct LightUnit {
+        uint8_t addr;
+        uint8_t fadeTime;
+        uint8_t lampOn;
+        uint8_t actualLevel;
+        bool gearGroups[16];
+        uint8_t fadeRate;
+        // physical minimum level corresponding to the minimum light output the control gear can operate at
+        uint8_t PHM;
+        bool scenes[16];
+    };
+
     /** Constructor DALIDriver
      *
      *  @param out_pin      Output pin for the DALI commands
@@ -63,6 +83,8 @@ public:
     */
     bool init();
 
+    bool add_to_group(LightUnit* light, uint8_t group);
+
     /** Send a command on the bus 
     *
     *   @param address     The address byte for command
@@ -71,9 +93,6 @@ public:
     */ 
     void send_command(uint8_t address, uint8_t opcode);
 
-    struct LightUnit {
-        uint8_t addr;
-    };
     // Array of lights on bus
     LightUnit* lights;
 

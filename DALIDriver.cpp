@@ -26,6 +26,12 @@ DALIDriver::~DALIDriver()
     delete [] lights;
 }
 
+bool DALIDriver::add_to_group(LightUnit* light, uint8_t group)
+{
+    send_command(light->addr, ADD_TO_GROUP + group);
+    light->gearGroups[group] = true;
+}
+
 void DALIDriver::send_command(uint8_t address, uint8_t opcode) 
 {
     encoder.send((address << 8) | opcode);
@@ -59,6 +65,8 @@ bool DALIDriver::init()
     lights = new LightUnit[num_logical_units];
     for(uint8_t i = 0; i < num_logical_units; i++) {
         LightUnit light;
+        // This makes address always for 'standard command' not for 'direct arc power'
+        // section 7.7.2 of 102 spec
         light.addr = (i << 1) + 1;
         lights[i] = light;
     }
