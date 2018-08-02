@@ -103,15 +103,16 @@ void DALIDriver::go_to_scene(uint8_t addr, uint8_t scene) {
 
 void DALIDriver::send_command_standard(uint8_t address, uint8_t opcode) 
 {
+    // Change address to have 1 in LSb to signify 'standard command'
     address = (address << 1) + 1;
-    encoder.send((address << 8) | opcode);
+    encoder.send(((uint16_t)address << 8) | opcode);
 }
 
 void DALIDriver::send_command_direct(uint8_t address, uint8_t opcode) 
 {
     // Change address to have 0 in LSb to signify 'direct arc power'
     address = address << 1;
-    encoder.send((address << 8) | opcode);
+    encoder.send(((uint16_t)address << 8) | opcode);
 }
 
 bool DALIDriver::check_response(uint8_t expected) 
