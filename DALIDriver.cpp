@@ -67,6 +67,10 @@ void DALIDriver::turn_off(uint8_t addr) {
     send_command_standard(addr, OFF);
 }
 
+void DALIDriver::turn_on(uint8_t addr) {
+    send_command_standard(addr, ON_AND_STEP_UP);
+}
+
 void DALIDriver::send_twice(uint8_t addr, uint8_t opcode) { 
     send_command_standard(addr, opcode);
 }

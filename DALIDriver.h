@@ -100,7 +100,10 @@ public:
     bool remove_from_group(uint8_t addr, uint8_t group);
     void set_level(uint8_t addr, uint8_t level);
     void turn_off(uint8_t addr);
+    void turn_on(uint8_t addr);
+    // 0 <= rate <= 15
     void set_fade_rate(uint8_t addr, uint8_t rate);
+    // 0 <= time <= 15
     void set_fade_time(uint8_t addr, uint8_t time);
     void set_scene(uint8_t addr, uint8_t scene, uint8_t level);
     void remove_from_scene(uint8_t addr, uint8_t scene);
