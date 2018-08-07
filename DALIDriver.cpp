@@ -143,11 +143,11 @@ uint8_t DALIDriver::get_group_addr(uint8_t group_number)
     return mask | group_number;
 }
 
-bool DALIDriver::init() 
+int DALIDriver::init() 
 {
     // TODO: does this need to happen every time controller boots?
     num_logical_units = assign_addresses();
-    return (num_logical_units != 0);
+    return num_logical_units;
 }
     
 // Return number of logical units on the bus

@@ -74,10 +74,10 @@ public:
 
     /** Initialise the driver 
     *
-    *   @returns    true if successful 
+    *   @returns    the number of logical units on the bus 
     *       
     */
-    bool init();
+    int init();
 
     
     /** Send a standard command on the bus 
