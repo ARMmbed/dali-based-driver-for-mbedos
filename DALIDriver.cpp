@@ -36,7 +36,7 @@ bool DALIDriver::add_to_group(uint8_t addr, uint8_t group)
     // Receive gearGroups variable
     uint8_t resp = encoder.recv(); 
     // Group bit will be set if this light is a memeber of that group
-    uint8_t mask = 1 << group;
+    uint8_t mask = 1 << (group % 8);
     bool contained = resp & mask;
     // Return whether light is part of group
     return contained;
@@ -53,7 +53,7 @@ bool DALIDriver::remove_from_group(uint8_t addr, uint8_t group)
     // Receive gearGroups variable
     uint8_t resp = encoder.recv(); 
     // Group bit will be set if this light is a memeber of that group
-    uint8_t mask = 1 << group;
+    uint8_t mask = 1 << (group % 8);
     bool contained = resp & mask;
     // Return whether light is not part of group
     return !contained;
