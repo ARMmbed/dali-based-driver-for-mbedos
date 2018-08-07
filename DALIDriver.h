@@ -96,23 +96,108 @@ public:
     */ 
     void send_command_direct(uint8_t address, uint8_t opcode);
 
-    bool add_to_group(uint8_t addr, uint8_t group);
-    bool remove_from_group(uint8_t addr, uint8_t group);
-    void set_level(uint8_t addr, uint8_t level);
-    void turn_off(uint8_t addr);
-    void turn_on(uint8_t addr);
-    // 0 <= rate <= 15
-    void set_fade_rate(uint8_t addr, uint8_t rate);
-    // 0 <= time <= 15
-    void set_fade_time(uint8_t addr, uint8_t time);
-    void set_scene(uint8_t addr, uint8_t scene, uint8_t level);
-    void remove_from_scene(uint8_t addr, uint8_t scene);
-    void go_to_scene(uint8_t addr, uint8_t scene);
-    void send_twice(uint8_t addr, uint8_t opcode);
+    /** Get the address of a group 
+    *
+    *   @param group_number    The group number [0-15]
+    *   @returns
+    *       8 bit address of the group
+    *
+    */ 
     uint8_t get_group_addr(uint8_t group_number);
 
-private:
+    /** Add a device to a group 
+    *
+    *   @param addr    8 bit device address 
+    *   @param group   The group number [0-15]
+    *   @returns
+    *       true if command success
+    *
+    */ 
+    bool add_to_group(uint8_t addr, uint8_t group);
 
+    /** Remove a device from a group 
+    *
+    *   @param addr    8 bit device address 
+    *   @param group   The group number [0-15]
+    *   @returns
+    *       true if command success
+    *
+    */ 
+    bool remove_from_group(uint8_t addr, uint8_t group);
+
+    
+    /** Set the light output for a device/group 
+    *
+    *   @param addr    8 bit address (device or group)
+    *   @param level   Light output level [0,254]
+    *   NOTE: Refer to section 9.3 of iec62386-102 for dimming curve
+    *
+    */ 
+    void set_level(uint8_t addr, uint8_t level);
+
+    /** Turn a device/group off 
+    *
+    *   @param addr    8 bit address (device or group)
+    *
+    */
+    void turn_off(uint8_t addr);
+
+    /** Turn a device/group on 
+    *
+    *   @param addr    8 bit address (device or group)
+    *
+    */
+    void turn_on(uint8_t addr);
+
+    /** Set the fade rate for a device/group 
+    *
+    *   @param addr    8 bit address (device or group)
+    *   @param rate    Fade rate [1, 15]
+    *   NOTE: Refer to section 9.5.3 of iec62386-102 for fade rate calculation
+    *
+    */
+    void set_fade_rate(uint8_t addr, uint8_t rate);
+
+    /** Set the fade time for a device/group 
+    *
+    *   @param addr    8 bit address (device or group)
+    *   @param rate    Fade time [1, 15]
+    *   NOTE: Refer to section 9.5.2 of iec62386-102 for fade time calculation
+    *
+    */
+    void set_fade_time(uint8_t addr, uint8_t time);
+
+
+    /** Set the light output for a scene 
+    *
+    *   @param addr    8 bit address (device or group)
+    *   @param scene   scene number [0, 15] 
+    *   @param level   Light output level [0,254]
+    *
+    */ 
+    void set_scene(uint8_t addr, uint8_t scene, uint8_t level);
+
+    /** Remove device/group from scene 
+    *
+    *   @param addr    8 bit address (device or group)
+    *   @param scene   scene number [0, 15] 
+    *
+    */ 
+    void remove_from_scene(uint8_t addr, uint8_t scene);
+
+    /** Go to a scene 
+    *
+    *   @param addr    8 bit address (device or group)
+    *   @param scene   scene number [0, 15] 
+    *
+    */ 
+    void go_to_scene(uint8_t addr, uint8_t scene);
+
+private:
+    
+    // Some commands must be sent twice, utility function to do that
+    void send_twice(uint8_t addr, uint8_t opcode);
+    
     /** Assign addresses to the logical units on the bus 
     *
     *   @returns    The number of logical units found on bus
