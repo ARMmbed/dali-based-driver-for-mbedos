@@ -193,6 +193,8 @@ public:
     */ 
     void go_to_scene(uint8_t addr, uint8_t scene);
 
+    static const uint8_t broadcast_addr = 0xFF;
+
 private:
     
     // Some commands must be sent twice, utility function to do that

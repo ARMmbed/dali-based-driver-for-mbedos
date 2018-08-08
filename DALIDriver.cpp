@@ -197,7 +197,6 @@ int DALIDriver::assign_addresses()
             if (yes) {
                 // We found a unit, let's program the short address with a new address
                 // Give it a temporary short address
-                send_command_standard(PROGRAM_SHORT_ADDR, (63 << 1) + 1);
                 uint8_t new_addr = numAssignedShortAddresses;
                 if (new_addr < 63) {
                     if (assignedAddresses[new_addr] == true) {
