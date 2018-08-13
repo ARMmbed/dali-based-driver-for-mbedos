@@ -23,17 +23,19 @@ public:
     // Flag data ready
     volatile bool data_ready;
 
-    ManchesterEncoder(PinName out_pin, PinName in_pin, int baud, bool idle_state = 1)
+    ManchesterEncoder(PinName out_pin, PinName in_pin, int baud, bool idle_state = 0)
         : _output_pin(out_pin),
           _input_pin(in_pin) 
     {
-          _output_pin = idle_state;
+        _idle_state = idle_state;
+        _output_pin = idle_state;
         // Half bit time in seconds
         float time_s = 1.0/(2.0*(float)baud);
         // Half bit time in microseconds
         _half_bit_time =  (int)(time_s * 1000000.0);
         data_ready = false;
-        _input_pin.fall(callback(this, &ManchesterEncoder::fall_handler));
+        _input_pin.rise(callback(this, &ManchesterEncoder::rise_handler));
+        recv_data = 0;
     }
    
     // Blocking receive call 
@@ -62,23 +64,23 @@ public:
         // We don't want to be preempted because this is time sensitive 
         core_util_critical_section_enter();
         // Send start condition
-        _output_pin = 0;
+        _output_pin = !_idle_state;
         wait_us(_half_bit_time);
-        _output_pin = 1;
+        _output_pin = _idle_state;
         wait_us(_half_bit_time);
         // Send the data
         for(int i = 0; i < 16; i++) {
-            // Send the inverted MSb
-            _output_pin = !((bool)(data_out & 0x8000));
-            wait_us(_half_bit_time);
             // Send the actual MSb
             _output_pin = (bool)(data_out & 0x8000);
+            wait_us(_half_bit_time);
+            // Send the inverted MSb
+            _output_pin = !((bool)(data_out & 0x8000));
             wait_us(_half_bit_time);
             // Shift to next bit
             data_out = data_out << 1;
         }
         // Send the stop condition
-        _output_pin = 1;
+        _output_pin = _idle_state;
         wait_us(2400);
         core_util_critical_section_exit();
     } 
@@ -86,8 +88,8 @@ public:
 private:
     
     void clear_interrupts() {
-        _input_pin.fall(0);
         _input_pin.rise(0);
+        _input_pin.fall(0);
     } 
 
     void stop() {
@@ -96,7 +98,7 @@ private:
             data_ready = true;
         }
         rx_in_progress = false;
-        _input_pin.fall(callback(this, &ManchesterEncoder::fall_handler));
+        _input_pin.rise(callback(this, &ManchesterEncoder::rise_handler));
     }
 
     void irq_handler() { 
@@ -111,7 +113,7 @@ private:
     void read_state() {
         int state = _input_pin.read();
         if (bit_count < 7) {
-            uint8_t mask = !((bool)state) << (7-bit_count++);
+            uint8_t mask = ((bool)state) << (7-bit_count++);
             recv_data |= mask;
         }
         if (state == 0) {
@@ -124,11 +126,11 @@ private:
         t2.attach_us(callback(this, &ManchesterEncoder::stop), _half_bit_time + 2400);
     }
  
-    void fall_handler() {
+    void rise_handler() {
         bit_count = 0;
         clear_interrupts();
-        // Rise handler called in less than 1.5*_half_bit_time means start condition
-        _input_pin.rise(callback(this, &ManchesterEncoder::irq_handler));
+        // fall handler called in less than 1.5*_half_bit_time means start condition
+        _input_pin.fall(callback(this, &ManchesterEncoder::irq_handler));
         // Stop condition if rise handler is not called in time
         t2.attach_us(callback(this, &ManchesterEncoder::stop), 1.5*(float)_half_bit_time);
     }
@@ -142,6 +144,7 @@ private:
     volatile uint8_t recv_data;
     volatile uint8_t bit_count;
     volatile bool rx_in_progress;
+    bool _idle_state;
     Timeout t1;
     Timeout t2;
 };
