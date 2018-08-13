@@ -53,6 +53,7 @@ enum CommandOpCodes {
     REMOVE_FROM_SCENE = 0x50,
     REMOVE_FROM_GROUP = 0x70,
     ADD_TO_GROUP = 0x60,
+    SET_SHORT_ADDR = 0x80,
     SET_MAX_LEVEL = 0x2A
 };
 
@@ -68,7 +69,7 @@ public:
      *  @param baud         Signal baud rate
      *  @param idle_state   The default state of the line (high for DALI) 
      */
-    DALIDriver(PinName out_pin, PinName in_pin, int baud = 1200, bool idle_state = 1);
+    DALIDriver(PinName out_pin, PinName in_pin, int baud = 1200, bool idle_state = 0);
     
     ~DALIDriver();
 
@@ -87,6 +88,14 @@ public:
     *
     */ 
     void send_command_standard(uint8_t address, uint8_t opcode);
+		
+    /** Send a standard command on the bus 
+    *
+    *   @param address     The address byte for command
+    *   @param opcode      The opcode byte 
+    *
+    */ 
+    void send_command_special(uint8_t address, uint8_t opcode);
 
     /** Send a direct arc power command on the bus 
     *
