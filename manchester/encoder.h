@@ -25,7 +25,7 @@ public:
 
     ManchesterEncoder(PinName out_pin, PinName in_pin, int baud, bool idle_state = 0)
         : _output_pin(out_pin),
-          _input_pin(in_pin) 
+          _input_pin(in_pin, PullUp) 
     {
         _idle_state = idle_state;
         _output_pin = idle_state;
@@ -34,7 +34,6 @@ public:
         // Half bit time in microseconds
         _half_bit_time =  (int)(time_s * 1000000.0);
         data_ready = false;
-        _input_pin.rise(callback(this, &ManchesterEncoder::rise_handler));
         recv_data = 0;
     }
    
@@ -63,6 +62,7 @@ public:
     void send(uint16_t data_out) {
         // We don't want to be preempted because this is time sensitive 
         core_util_critical_section_enter();
+        clear_interrupts();
         // Send start condition
         _output_pin = !_idle_state;
         wait_us(_half_bit_time);
@@ -81,8 +81,9 @@ public:
         }
         // Send the stop condition
         _output_pin = _idle_state;
-        wait_us(2400);
         core_util_critical_section_exit();
+        _input_pin.rise(callback(this, &ManchesterEncoder::rise_handler));
+        wait_us(13500);
     } 
 
 private:
@@ -108,11 +109,12 @@ private:
         // Clear any stop timers
         t2.detach();
         t1.attach_us(callback(this, &ManchesterEncoder::read_state), 1.5*(float)_half_bit_time);
+        t2.attach_us(callback(this, &ManchesterEncoder::stop), 2450);
     }
 
     void read_state() {
         int state = _input_pin.read();
-        if (bit_count < 7) {
+        if (bit_count < 8) {
             uint8_t mask = ((bool)state) << (7-bit_count++);
             recv_data |= mask;
         }
@@ -122,8 +124,6 @@ private:
         else { 
             _input_pin.fall(callback(this, &ManchesterEncoder::irq_handler));
         }
-        // Start a timer to check for stop condition
-        t2.attach_us(callback(this, &ManchesterEncoder::stop), _half_bit_time + 2400);
     }
  
     void rise_handler() {
