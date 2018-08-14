@@ -33,6 +33,7 @@ enum SpecialCommandOpAddr {
     RANDOMISE = 0xA7,
     PROGRAM_SHORT_ADDR = 0xB7,
     COMPARE = 0xA9,
+    TERMINATE = 0xA1,
     WITHDRAW = 0xAB
 };
 

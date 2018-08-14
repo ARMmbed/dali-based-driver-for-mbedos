@@ -184,7 +184,7 @@ int DALIDriver::assign_addresses()
         bool yes = check_response(YES);       
         // If no devices are unassigned (all withdrawn), we are done
         if (!yes) {
-            return numAssignedShortAddresses;
+            break;
         }
         if(numAssignedShortAddresses < 63) {
             uint32_t searchAddr = 0xFFFFFF;
@@ -236,5 +236,8 @@ int DALIDriver::assign_addresses()
         send_command_special(INITIALISE, 0x00);
         send_command_special(INITIALISE, 0x00);
     }
+		
+    send_command_special(TERMINATE, 0x00);
+    return numAssignedShortAddresses;
 
 }
