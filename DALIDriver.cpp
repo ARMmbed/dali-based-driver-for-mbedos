@@ -67,6 +67,23 @@ void DALIDriver::turn_off(uint8_t addr) {
     send_command_standard(addr, OFF);
 }
 
+uint8_t DALIDriver::get_level(uint8_t addr) {
+    send_command_standard(addr, QUERY_ACTUAL_LEVEL);
+    uint8_t resp = encoder.recv(); 
+    return resp;
+}
+
+uint8_t DALIDriver::get_phm(uint8_t addr) {
+    send_command_standard(addr, QUERY_PHM);
+    uint8_t resp = encoder.recv(); 
+    return resp;
+}
+uint8_t DALIDriver::get_fade(uint8_t addr) {
+    send_command_standard(addr, QUERY_FADE);
+    uint8_t resp = encoder.recv(); 
+    return resp;
+}
+
 void DALIDriver::turn_on(uint8_t addr) {
     send_command_standard(addr, ON_AND_STEP_UP);
 }
@@ -77,15 +94,15 @@ void DALIDriver::send_twice(uint8_t addr, uint8_t opcode) {
 }
 
 void DALIDriver::set_fade_time(uint8_t addr, uint8_t time) {
-    send_command_standard(DTR0, time);
     // Send twice command
+    send_command_special(DTR0, time);
     send_twice(addr, SET_FADE_TIME); 
 }
 
 void DALIDriver::set_fade_rate(uint8_t addr, uint8_t rate) {
-    send_command_standard(DTR0, rate);
     // Send twice command
-    send_twice(addr, SET_FADE_RATE); 
+    send_command_special(DTR0, rate);
+    send_twice(addr, SET_FADE_RATE);
 }
 
 void DALIDriver::set_scene(uint8_t addr, uint8_t scene, uint8_t level) {

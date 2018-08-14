@@ -44,6 +44,9 @@ enum CommandOpCodes {
     ON_AND_STEP_UP = 0x08,
     QUERY_GEAR_GROUPS_L = 0xC0, // get lower byte of gear groups status
     QUERY_GEAR_GROUPS_H = 0xC1, // get upper byte of gear groups status
+    QUERY_ACTUAL_LEVEL = 0xA0,
+    QUERY_PHM = 0x9A,
+    QUERY_FADE = 0xA5,
     READ_MEM_LOC = 0xC5,
     
     // Commands below are "send twice"
@@ -158,6 +161,10 @@ public:
     *
     */
     void turn_on(uint8_t addr);
+
+    uint8_t get_level(uint8_t addr);
+    uint8_t get_fade(uint8_t addr);
+    uint8_t get_phm(uint8_t addr);
 
     /** Set the fade rate for a device/group 
     *
