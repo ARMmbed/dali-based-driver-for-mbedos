@@ -28,11 +28,11 @@ DALIDriver::~DALIDriver()
 bool DALIDriver::add_to_group(uint8_t addr, uint8_t group)
 {
     // Send the command to add to group
-    send_command_standard(addr, ADD_TO_GROUP + group);
+    send_twice(addr, ADD_TO_GROUP + group);
     // Query upper or lower bits of gearGroups 16 bit variable
     uint8_t cmd = group < 8 ? QUERY_GEAR_GROUPS_L : QUERY_GEAR_GROUPS_H;
     // Send query command
-    send_twice(addr, cmd);
+    send_command_standard(addr, cmd);
     // Receive gearGroups variable
     uint8_t resp = encoder.recv(); 
     // Group bit will be set if this light is a memeber of that group
@@ -45,11 +45,11 @@ bool DALIDriver::add_to_group(uint8_t addr, uint8_t group)
 bool DALIDriver::remove_from_group(uint8_t addr, uint8_t group)
 {
     // Send the command to remove from group
-    send_command_standard(addr, REMOVE_FROM_GROUP + group);
+    send_twice(addr, REMOVE_FROM_GROUP + group);
     // Query upper or lower bits of gearGroups 16 bit variable
     uint8_t cmd = group < 8 ? QUERY_GEAR_GROUPS_L : QUERY_GEAR_GROUPS_H;
     // Send query command
-    send_twice(addr, cmd);
+    send_command_standard(addr, cmd);
     // Receive gearGroups variable
     uint8_t resp = encoder.recv(); 
     // Group bit will be set if this light is a memeber of that group
@@ -106,7 +106,7 @@ void DALIDriver::set_fade_rate(uint8_t addr, uint8_t rate) {
 }
 
 void DALIDriver::set_scene(uint8_t addr, uint8_t scene, uint8_t level) {
-    send_command_standard(DTR0, level);
+    send_command_special(DTR0, level);
     // Send twice command
     send_twice(addr, SET_SCENE + scene); 
 }
@@ -126,15 +126,19 @@ void DALIDriver::send_command_special(uint8_t address, uint8_t opcode)
 
 void DALIDriver::send_command_standard(uint8_t address, uint8_t opcode) 
 {
+    // Get the upper bit
+    uint8_t mask = address & 0x80;
     // Change address to have 1 in LSb to signify 'standard command'
-    address = (address << 1) + 1;
+    address = mask | ((address << 1) + 1);
     encoder.send(((uint16_t)address << 8) | opcode);
 }
 
 void DALIDriver::send_command_direct(uint8_t address, uint8_t opcode) 
 {
+    // Get the upper bit
+    uint8_t mask = address & 0x80;
     // Change address to have 0 in LSb to signify 'direct arc power'
-    address = address << 1;
+    address = mask | (address << 1);
     encoder.send(((uint16_t)address << 8) | opcode);
 }
 
