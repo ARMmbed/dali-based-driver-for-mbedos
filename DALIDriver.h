@@ -162,8 +162,32 @@ public:
     */
     void turn_on(uint8_t addr);
 
+    /** Get the current light level 
+    *
+    *   @param addr    8 bit address (device or group)
+    *   @returns
+    *       Light level [0, 254] from QUERY ACTUAL LEVEL command
+    *
+    */
     uint8_t get_level(uint8_t addr);
+
+    /** Get the fade time and fade rate 
+    *
+    *   @param addr    8 bit address (device or group)
+    *   @returns
+    *       The 8 bit representation of the fade time/fade rate from the QUERY FADE TIME/FADE RATE command 
+    *       The answer shall be XXXX YYYYb, where XXXXb equals fadeTime and YYYYb equals fadeRate 
+    *
+    */
     uint8_t get_fade(uint8_t addr);
+
+    /** Get the physical minimum 
+    *
+    *   @param addr    8 bit address (device or group)
+    *   @returns
+    *       Physical minimum light output the control gear can operate at [0, 254] from QUERY PHYSICAL MINIMUM command
+    *
+    */
     uint8_t get_phm(uint8_t addr);
 
     /** Set the fade rate for a device/group 
