@@ -93,10 +93,10 @@ public:
     */ 
     void send_command_standard(uint8_t address, uint8_t opcode);
 		
-    /** Send a standard command on the bus 
+    /** Send a special command on the bus 
     *
-    *   @param address     The address byte for command
-    *   @param opcode      The opcode byte 
+    *   @param address     The special command opcode from SpecialCommandOpAddr enum
+    *   @param opcode      The data for the command
     *
     */ 
     void send_command_special(uint8_t address, uint8_t opcode);
