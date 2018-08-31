@@ -1,4 +1,4 @@
-# dali-driver
+# DALI-based Driver for Mbed OS
 
 ## Example Usage
 
