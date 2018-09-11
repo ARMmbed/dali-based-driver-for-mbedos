@@ -261,7 +261,7 @@ int DALIDriver::assign_addresses(bool reset)
         }
     }
     // Start initialization phase for devices w/o a short address
-    uint8_t opcode = 0x00 ? reset : 0xFF;
+    uint8_t opcode = reset ? 0x00 : 0xFF;
     send_command_special(INITIALISE, opcode);
     send_command_special(INITIALISE, opcode);
     // Assign all units a random address
