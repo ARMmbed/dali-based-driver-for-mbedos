@@ -32,6 +32,7 @@ enum SpecialCommandOpAddr {
     INITIALISE = 0xA5,
     RANDOMISE = 0xA7,
     PROGRAM_SHORT_ADDR = 0xB7,
+    QUERY_SHORT_ADDR = 0xBB,
     COMPARE = 0xA9,
     TERMINATE = 0xA1,
     WITHDRAW = 0xAB
@@ -248,7 +249,16 @@ private:
     *   NOTE: This process is mostly copied from page 82 of iec62386-102
     *   The addresses will be in the range [0, number units - 1]
     */ 
-    int assign_addresses();
+    int assign_addresses(bool reset = false);
+
+    /** Assign addresses to the logical units on the bus 
+    *
+    *   @returns    The number of logical units found on bus
+    *
+    *   NOTE: This process is mostly copied from page 82 of iec62386-102
+    *   The addresses will be in the range [0, number units - 1]
+    */ 
+    int get_highest_address();
 
     /** Set the controller search address 
     * This address will be used in search commands to determine what 
