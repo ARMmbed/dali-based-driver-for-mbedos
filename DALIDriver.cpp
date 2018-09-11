@@ -178,19 +178,92 @@ int DALIDriver::init()
     num_logical_units = assign_addresses();
     return num_logical_units;
 }
-    
+
+int DALIDriver::get_highest_address() {
+    int highestAssigned = -1;
+    // Start initialization phase
+    send_command_special(INITIALISE, 0x00);
+    send_command_special(INITIALISE, 0x00);
+    // Assign all units a random address
+    send_command_special(RANDOMISE, 0x00);
+    send_command_special(RANDOMISE, 0x00);
+    wait_ms(100);
+
+    bool found_non_mask =  false;
+
+    while(true) {
+        // Set the search address to the highest range
+        set_search_address(0xFFFFFF);
+        // Compare logical units search address to global search address
+        send_command_special(COMPARE, 0x00);
+        // Check if any device responds yes
+        bool yes = check_response(YES);       
+        // If no devices are unassigned (all withdrawn), we are done
+        if (!yes) {
+            break;
+        }
+        uint32_t searchAddr = 0xFFFFFF;
+        for(int i = 23; i>=0; i--) {
+            uint32_t mask = 1 << i;
+            searchAddr = searchAddr & (~mask);
+            // Set a new search address
+            set_search_address(searchAddr);
+            send_command_special(COMPARE, 0x00);
+            // Check if any devices match
+            bool yes = check_response(YES);
+            if(!yes) {
+                //No unit here, revert the mask
+                searchAddr = searchAddr | mask;
+            }
+            // If yes, then we found at least one device
+        }
+        set_search_address(searchAddr);
+        send_command_special(COMPARE, 0x00);
+        yes = check_response(YES);
+        if (yes) {
+            // Get the current short address
+            send_command_special(QUERY_SHORT_ADDR, 0x00);
+            uint8_t short_addr = encoder.recv();
+            if (short_addr != 0xFF) {
+                short_addr = short_addr >> 1;
+                if(short_addr > highestAssigned) { 
+                    highestAssigned = short_addr;
+                }
+            }
+            // Tell unit to withdraw (no longer respond to search queries)
+            send_command_special(WITHDRAW, 0x00);
+        }
+        // Refresh initialization state
+        send_command_special(INITIALISE, 0x00);
+        send_command_special(INITIALISE, 0x00);
+    }
+		
+    send_command_special(TERMINATE, 0x00);
+    return highestAssigned;
+}
+
 // Return number of logical units on the bus
-int DALIDriver::assign_addresses() 
+int DALIDriver::assign_addresses(bool reset) 
 {
     int searchCompleted = false;
     uint8_t numAssignedShortAddresses = 0;
     int assignedAddresses[63] = {false}; 
     int highestAssigned = -1;
-    send_command_special(DTR0, 0xFF);
-    send_twice(broadcast_addr, SET_SHORT_ADDR);
-    // Start initialization phase
-    send_command_special(INITIALISE, 0x00);
-    send_command_special(INITIALISE, 0x00);
+
+    if (!reset) {
+        // Get the highest address already assigned
+        int highest_addr = get_highest_address();
+        if (highest_addr >= 0) {
+            numAssignedShortAddresses = highest_addr + 1;
+            for (int i = 0; i < numAssignedShortAddresses; i++) {
+                assignedAddresses[i] = true;
+            }
+        }
+    }
+    // Start initialization phase for devices w/o a short address
+    uint8_t opcode = 0x00 ? reset : 0xFF;
+    send_command_special(INITIALISE, opcode);
+    send_command_special(INITIALISE, opcode);
     // Assign all units a random address
     send_command_special(RANDOMISE, 0x00);
     send_command_special(RANDOMISE, 0x00);
@@ -207,6 +280,7 @@ int DALIDriver::assign_addresses()
         if (!yes) {
             break;
         }
+        printf("hi\r\n");
         if(numAssignedShortAddresses < 63) {
             uint32_t searchAddr = 0xFFFFFF;
             for(int i = 23; i>=0; i--) {
