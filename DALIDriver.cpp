@@ -78,6 +78,7 @@ uint8_t DALIDriver::get_phm(uint8_t addr) {
     uint8_t resp = encoder.recv(); 
     return resp;
 }
+
 uint8_t DALIDriver::get_fade(uint8_t addr) {
     send_command_standard(addr, QUERY_FADE);
     uint8_t resp = encoder.recv(); 
