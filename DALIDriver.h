@@ -85,6 +85,8 @@ public:
     */
     int init();
 
+    void attach(mbed::Callback<void(uint8_t)> status_cb);
+
     
     /** Send a standard command on the bus 
     *

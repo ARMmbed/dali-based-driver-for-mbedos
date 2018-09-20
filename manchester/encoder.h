@@ -85,6 +85,11 @@ public:
         _input_pin.rise(callback(this, &ManchesterEncoder::rise_handler));
         wait_us(13500);
     } 
+    
+    void attach(mbed::Callback<void(uint8_t)> status_cb) {
+        _sensor_event_cb = status_cb;
+        _input_pin.rise(callback(this, &ManchesterEncoder::rise_handler));
+    }
 
 private:
     
@@ -99,6 +104,8 @@ private:
             data_ready = true;
         }
         rx_in_progress = false;
+        // Call sensor event handler
+        _sensor_event_cb(recv_data);
         _input_pin.rise(callback(this, &ManchesterEncoder::rise_handler));
     }
 
@@ -147,6 +154,8 @@ private:
     bool _idle_state;
     Timeout t1;
     Timeout t2;
+    
+    Callback<void(uint8_t)> _sensor_event_cb;
 };
 
 #endif

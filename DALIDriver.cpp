@@ -120,6 +120,10 @@ void DALIDriver::go_to_scene(uint8_t addr, uint8_t scene) {
     send_twice(addr, GO_TO_SCENE + scene);
 }
 
+void DALIDriver::attach(mbed::Callback<void(uint8_t)> status_cb) {
+    encoder.attach(status_cb);
+}
+
 void DALIDriver::send_command_special(uint8_t address, uint8_t opcode) 
 {
     encoder.send(((uint16_t)address << 8) | opcode);
