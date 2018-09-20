@@ -129,6 +129,11 @@ void DALIDriver::send_command_special(uint8_t address, uint8_t opcode)
     encoder.send(((uint16_t)address << 8) | opcode);
 }
 
+void DALIDriver::send_command_special_input(uint8_t instance, uint8_t opcode) 
+{
+    encoder.send_24(((uint32_t)0xC1 << 16) | ((uint16_t)instance << 8) | opcode);
+}
+
 void DALIDriver::send_command_standard(uint8_t address, uint8_t opcode) 
 {
     // Get the upper bit
@@ -170,6 +175,13 @@ void DALIDriver::set_search_address(uint32_t val)
     send_command_special(SEARCHADDRL, val & 0x0000FF);
 }
 
+void DALIDriver::set_search_address_input(uint32_t val) 
+{
+    send_command_special_input(0x05, val >> 16);
+    send_command_special_input(0x06, (val >> 8) & (0x00FF));
+    send_command_special_input(0x07, val & 0x0000FF);
+}
+
 uint8_t DALIDriver::get_group_addr(uint8_t group_number)
 {
     uint8_t mask = 1 << 7;
@@ -181,6 +193,7 @@ int DALIDriver::init()
 {
     // TODO: does this need to happen every time controller boots?
     num_logical_units = assign_addresses();
+    num_logical_units += assign_addresses_input(true, num_logical_units);
     return num_logical_units;
 }
 
@@ -285,7 +298,6 @@ int DALIDriver::assign_addresses(bool reset)
         if (!yes) {
             break;
         }
-        printf("hi\r\n");
         if(numAssignedShortAddresses < 63) {
             uint32_t searchAddr = 0xFFFFFF;
             for(int i = 23; i>=0; i--) {
@@ -338,6 +350,91 @@ int DALIDriver::assign_addresses(bool reset)
     }
 		
     send_command_special(TERMINATE, 0x00);
+    return numAssignedShortAddresses;
+
+}
+
+// Return number of logical units on the bus
+int DALIDriver::assign_addresses_input(bool reset, int num_found) 
+{
+    int searchCompleted = false;
+    uint8_t numAssignedShortAddresses = num_found;
+    int assignedAddresses[63] = {false}; 
+    int highestAssigned = -1;
+
+    // Start initialization phase for devices w/o a short address
+    uint8_t opcode = reset ? 0x00 : 0xFF;
+    send_command_special_input(0x01, 0xFF);
+    send_command_special_input(0x01, 0xFF);
+    // Assign all units a random address
+    send_command_special_input(0x02, 0x00);
+    send_command_special_input(0x02, 0x00);
+    wait_ms(100);
+    
+    while(true) {
+        // Set the search address to the highest range
+        set_search_address_input(0xFFFFFF);
+        // Compare logical units search address to global search address
+        send_command_special_input(0x03, 0x00);
+        // Check if any device responds yes
+        bool yes = check_response(YES);       
+        // If no devices are unassigned (all withdrawn), we are done
+        if (!yes) {
+            break;
+        }
+        printf("hi\r\n");
+        if(numAssignedShortAddresses < 63) {
+            uint32_t searchAddr = 0xFFFFFF;
+            for(int i = 23; i>=0; i--) {
+                uint32_t mask = 1 << i;
+                searchAddr = searchAddr & (~mask);
+                // Set a new search address
+                set_search_address_input(searchAddr);
+                send_command_special_input(0x03, 0x00);
+                // Check if any devices match
+                bool yes = check_response(YES);
+                if(!yes) {
+                    //No unit here, revert the mask
+                    searchAddr = searchAddr | mask;
+                }
+                // If yes, then we found at least one device
+            }
+            set_search_address_input(searchAddr);
+            send_command_special_input(0x03, 0x00);
+            bool yes = check_response(YES);
+            if (yes) {
+                // We found a unit, let's program the short address with a new address
+                // Give it a temporary short address
+                uint8_t new_addr = numAssignedShortAddresses;
+                if (new_addr < 63) {
+                    if (assignedAddresses[new_addr] == true) {
+                        // Duplicate addr?
+                    }   
+                    else {
+                        // Program new address as short address
+                        send_command_special_input(0x08, (new_addr << 1) + 1);
+                        // Tell unit to withdraw (no longer respond to search queries)
+                        send_command_special_input(0x04, 0x00);
+                        numAssignedShortAddresses++;
+                        assignedAddresses[new_addr] = true;
+                        if(new_addr > highestAssigned) 
+                            highestAssigned = new_addr;
+                    }
+                }
+                else {
+                    // expected < 63 ?
+                }
+            }
+            else {
+                // No device found
+            }
+        }
+        // Refresh initialization state
+        send_command_special_input(0x01, 0x00);
+        send_command_special_input(0x01, 0x00);
+    }
+		
+    send_command_special(0x00, 0x00);
     return numAssignedShortAddresses;
 
 }

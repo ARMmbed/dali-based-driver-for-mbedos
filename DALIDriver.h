@@ -103,6 +103,7 @@ public:
     *
     */ 
     void send_command_special(uint8_t address, uint8_t opcode);
+    void send_command_special_input(uint8_t instance, uint8_t opcode);
 
     /** Send a direct arc power command on the bus 
     *
@@ -252,6 +253,7 @@ private:
     *   The addresses will be in the range [0, number units - 1]
     */ 
     int assign_addresses(bool reset = false);
+    int assign_addresses_input(bool reset = false, int num_found = 0);
 
     /** Assign addresses to the logical units on the bus 
     *
@@ -270,6 +272,7 @@ private:
     *
     */ 
     void set_search_address(uint32_t val);
+    void set_search_address_input(uint32_t val);
 
     /** Check the response from the bus 
     *
