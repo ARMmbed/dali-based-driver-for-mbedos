@@ -35,6 +35,7 @@ public:
         _half_bit_time =  (int)(time_s * 1000000.0);
         data_ready = false;
         recv_data = 0;
+        bit_recv_total = 8;
     }
    
     // Blocking receive call 
@@ -59,6 +60,33 @@ public:
         return ret;
     }
     
+    void send_24(uint32_t data_out) {
+        // We don't want to be preempted because this is time sensitive 
+        core_util_critical_section_enter();
+        clear_interrupts();
+        // Send start condition
+        _output_pin = !_idle_state;
+        wait_us(_half_bit_time);
+        _output_pin = _idle_state;
+        wait_us(_half_bit_time);
+        // Send the data
+        for(int i = 0; i < 24; i++) {
+            // Send the actual MSb
+            _output_pin = (bool)(data_out & 0x800000);
+            wait_us(_half_bit_time);
+            // Send the inverted MSb
+            _output_pin = !((bool)(data_out & 0x800000));
+            wait_us(_half_bit_time);
+            // Shift to next bit
+            data_out = data_out << 1;
+        }
+        // Send the stop condition
+        _output_pin = _idle_state;
+        core_util_critical_section_exit();
+        _input_pin.rise(callback(this, &ManchesterEncoder::rise_handler));
+        wait_us(13500);
+    }
+
     void send(uint16_t data_out) {
         // We don't want to be preempted because this is time sensitive 
         core_util_critical_section_enter();
@@ -82,13 +110,21 @@ public:
         // Send the stop condition
         _output_pin = _idle_state;
         core_util_critical_section_exit();
+        detach();
+        bit_recv_total = 8;
         _input_pin.rise(callback(this, &ManchesterEncoder::rise_handler));
         wait_us(13500);
     } 
     
     void attach(mbed::Callback<void(uint8_t)> status_cb) {
+        bit_recv_total = 24;
         _sensor_event_cb = status_cb;
         _input_pin.rise(callback(this, &ManchesterEncoder::rise_handler));
+    }
+    
+    void detach() {
+        _sensor_event_cb = NULL;
+        clear_interrupts();
     }
 
 private:
@@ -122,8 +158,8 @@ private:
 
     void read_state() {
         int state = _input_pin.read();
-        if (bit_count < 8) {
-            uint8_t mask = ((bool)state) << (7-bit_count++);
+        if (bit_count < bit_recv_total) {
+            uint8_t mask = ((bool)state) << ((bit_recv_total-1)-bit_count++);
             recv_data |= mask;
         }
         if (state == 0) {
@@ -149,9 +185,11 @@ private:
     InterruptIn _input_pin;
     // Half the time for each bit (1/(2*baud)) 
     int _half_bit_time;
-    volatile uint8_t recv_data;
+    volatile uint32_t recv_data;
     volatile uint8_t bit_count;
     volatile bool rx_in_progress;
+    // Total amount of bits expected
+    volatile uint8_t bit_recv_total;
     bool _idle_state;
     Timeout t1;
     Timeout t2;
