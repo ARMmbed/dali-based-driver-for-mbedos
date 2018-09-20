@@ -116,7 +116,7 @@ public:
         wait_us(13500);
     } 
     
-    void attach(mbed::Callback<void(uint8_t)> status_cb) {
+    void attach(mbed::Callback<void(uint32_t)> status_cb) {
         bit_recv_total = 24;
         _sensor_event_cb = status_cb;
         _input_pin.rise(callback(this, &ManchesterEncoder::rise_handler));
@@ -194,7 +194,7 @@ private:
     Timeout t1;
     Timeout t2;
     
-    Callback<void(uint8_t)> _sensor_event_cb;
+    Callback<void(uint32_t)> _sensor_event_cb;
 };
 
 #endif
