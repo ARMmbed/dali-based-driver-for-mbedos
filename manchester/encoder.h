@@ -105,7 +105,8 @@ private:
         }
         rx_in_progress = false;
         // Call sensor event handler
-        _sensor_event_cb(recv_data);
+        if(_sensor_event_cb)
+            _sensor_event_cb(recv_data);
         _input_pin.rise(callback(this, &ManchesterEncoder::rise_handler));
     }
 
