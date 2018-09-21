@@ -434,7 +434,7 @@ int DALIDriver::assign_addresses_input(bool reset, int num_found)
         send_command_special_input(0x01, 0x00);
     }
 		
-    send_command_special(0x00, 0x00);
+    send_command_special_input(0x00, 0x00);
     return numAssignedShortAddresses;
 
 }
