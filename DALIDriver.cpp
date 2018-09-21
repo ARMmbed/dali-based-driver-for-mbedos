@@ -357,6 +357,7 @@ int DALIDriver::assign_addresses(bool reset)
 // Return number of logical units on the bus
 int DALIDriver::assign_addresses_input(bool reset, int num_found) 
 {
+    send_command_special(TERMINATE, 0x00);
     int searchCompleted = false;
     uint8_t numAssignedShortAddresses = num_found;
     int assignedAddresses[63] = {false}; 
