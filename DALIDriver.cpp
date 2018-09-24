@@ -131,6 +131,14 @@ void DALIDriver::go_to_scene(uint8_t addr, uint8_t scene) {
     send_twice(addr, GO_TO_SCENE + scene);
 }
 
+event_msg DALIDriver::parse_event(uint32_t data) {
+    event_msg msg;
+    msg.addr = data >> 17;
+    msg.inst_type = data >> 10;
+    msg.info = data & 0x3FF;
+    return msg;
+}
+
 void DALIDriver::attach(mbed::Callback<void(uint32_t)> status_cb) {
     encoder.attach(status_cb);
 }

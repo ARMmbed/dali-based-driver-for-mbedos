@@ -244,6 +244,8 @@ public:
     static const uint8_t broadcast_addr = 0xFF;
     
     uint32_t recv();
+    
+    event_msg parse_event(uint32_t);
 
 private:
     

@@ -154,7 +154,7 @@ void ManchesterEncoder::irq_handler() {
 void ManchesterEncoder::read_state() {
     int state = _input_pin.read();
     if (bit_count < bit_recv_total) {
-        uint8_t mask = ((bool)state) << ((bit_recv_total-1)-bit_count++);
+        uint32_t mask = ((bool)state) << ((bit_recv_total-1)-bit_count++);
         recv_data |= mask;
     }
     if (state == 0) {
