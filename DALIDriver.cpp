@@ -87,7 +87,7 @@ uint8_t DALIDriver::get_fade(uint8_t addr) {
 
 uint32_t DALIDriver::query_instances(uint8_t addr) {
     encoder.set_recv_frame_length(24);
-    send_command_standard_input(addr, 0xFE, 0x3D);
+    send_command_standard_input(addr, 0xFE, 0x35);
     uint32_t resp = encoder.recv();
     return resp;
 }
@@ -383,15 +383,19 @@ int DALIDriver::assign_addresses_input(bool reset, int num_found)
     uint8_t numAssignedShortAddresses = num_found;
     int assignedAddresses[63] = {false}; 
     int highestAssigned = -1;
-    // Send the reset command
-    /**
-    send_command_standard_input(0xFE, 0xFE, 0x10);
-    send_command_standard_input(0xFE, 0xFE, 0x10);
-    wait_ms(300);
-    **/
+    
+    // Put 0x00 in DTR0
+    send_command_special_input(0x30, 0x00);
+    // Set operating mode to DTR0
+    send_command_standard_input(0xFF, 0xFE, 0x18);
+    send_command_standard_input(0xFF, 0xFE, 0x18);
 
-    // Start initialization phase for devices w/o a short address
-    uint8_t opcode = reset ? 0x00 : 0xFF;
+    // DTR0 MASK
+    send_command_special_input(0x30, 0xFF);
+    // Set short address to DTR0
+    send_command_standard_input(0x7F, 0xFE, 0x14);
+    send_command_standard_input(0x7F, 0xFE, 0x14);
+    // Start initialization phase for devices
     send_command_special_input(0x01, 0xFF);
     send_command_special_input(0x01, 0xFF);
     // Assign all units a random address
@@ -458,12 +462,11 @@ int DALIDriver::assign_addresses_input(bool reset, int num_found)
             }
         }
         // Refresh initialization state
-        send_command_special_input(0x01, 0x00);
-        send_command_special_input(0x01, 0x00);
+        send_command_special_input(0x01, 0x7F);
+        send_command_special_input(0x01, 0x7F);
     }
 		
     send_command_special_input(0x00, 0x00);
-    send_command_special(TERMINATE, 0x00);
     return numAssignedShortAddresses;
 
 }
