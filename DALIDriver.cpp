@@ -85,6 +85,10 @@ uint8_t DALIDriver::get_fade(uint8_t addr) {
     return resp;
 }
 
+uint32_t DALIDriver::recv() {
+    return encoder.recv();
+}
+
 uint32_t DALIDriver::query_instances(uint8_t addr) {
     encoder.set_recv_frame_length(8);
     send_command_standard_input(addr, 0xFE, 0x35);

@@ -18,6 +18,13 @@
 
 #include "mbed.h"
 
+
+struct event_msg {
+    uint8_t addr;
+    uint8_t inst_type;
+    uint16_t info;
+};
+
 class ManchesterEncoder {
 public:
     // Flag data ready
