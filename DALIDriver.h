@@ -83,7 +83,8 @@ public:
     *   @returns    the number of logical units on the bus 
     *       
     */
-    int init();
+    int init_lights();
+    int init_inputs();
 
     void attach(mbed::Callback<void(uint32_t)> status_cb);
 
@@ -95,6 +96,7 @@ public:
     *
     */ 
     void send_command_standard(uint8_t address, uint8_t opcode);
+    void send_command_standard_input(uint8_t address, uint8_t instance, uint8_t opcode);
 		
     /** Send a special command on the bus 
     *
@@ -184,6 +186,7 @@ public:
     *
     */
     uint8_t get_fade(uint8_t addr);
+    uint32_t query_instances(uint8_t addr);
 
     /** Get the physical minimum 
     *

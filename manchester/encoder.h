@@ -87,6 +87,10 @@ public:
         wait_us(13500);
     }
 
+    void set_recv_frame_length(int num) {
+        bit_recv_total = num;
+    }
+
     void send(uint16_t data_out) {
         // We don't want to be preempted because this is time sensitive 
         core_util_critical_section_enter();

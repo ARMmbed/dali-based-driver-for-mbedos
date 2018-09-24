@@ -85,6 +85,13 @@ uint8_t DALIDriver::get_fade(uint8_t addr) {
     return resp;
 }
 
+uint32_t DALIDriver::query_instances(uint8_t addr) {
+    encoder.set_recv_frame_length(24);
+    send_command_standard_input(addr, 0xFE, 0x3D);
+    uint32_t resp = encoder.recv();
+    return resp;
+}
+
 void DALIDriver::turn_on(uint8_t addr) {
     send_command_standard(addr, ON_AND_STEP_UP);
 }
@@ -132,6 +139,15 @@ void DALIDriver::send_command_special(uint8_t address, uint8_t opcode)
 void DALIDriver::send_command_special_input(uint8_t instance, uint8_t opcode) 
 {
     encoder.send_24(((uint32_t)0xC1 << 16) | ((uint16_t)instance << 8) | opcode);
+}
+
+void DALIDriver::send_command_standard_input(uint8_t address, uint8_t instance, uint8_t opcode) 
+{
+    // Get the upper bit
+    uint8_t mask = address & 0x80;
+    // Change address to have 1 in LSb to signify 'standard command'
+    address = mask | ((address << 1) + 1);
+    encoder.send_24(((uint32_t)address << 16) | ((uint16_t) instance<< 8) | opcode);
 }
 
 void DALIDriver::send_command_standard(uint8_t address, uint8_t opcode) 
@@ -189,10 +205,15 @@ uint8_t DALIDriver::get_group_addr(uint8_t group_number)
     return mask | group_number;
 }
 
-int DALIDriver::init() 
+int DALIDriver::init_lights() 
 {
     // TODO: does this need to happen every time controller boots?
     num_logical_units = assign_addresses();
+    return num_logical_units;
+}
+
+int DALIDriver::init_inputs() 
+{
     num_logical_units += assign_addresses_input(true, num_logical_units);
     return num_logical_units;
 }
@@ -362,6 +383,12 @@ int DALIDriver::assign_addresses_input(bool reset, int num_found)
     uint8_t numAssignedShortAddresses = num_found;
     int assignedAddresses[63] = {false}; 
     int highestAssigned = -1;
+    // Send the reset command
+    /**
+    send_command_standard_input(0xFE, 0xFE, 0x10);
+    send_command_standard_input(0xFE, 0xFE, 0x10);
+    wait_ms(300);
+    **/
 
     // Start initialization phase for devices w/o a short address
     uint8_t opcode = reset ? 0x00 : 0xFF;
@@ -413,7 +440,7 @@ int DALIDriver::assign_addresses_input(bool reset, int num_found)
                     }   
                     else {
                         // Program new address as short address
-                        send_command_special_input(0x08, (new_addr << 1) + 1);
+                        send_command_special_input(0x08, new_addr);
                         // Tell unit to withdraw (no longer respond to search queries)
                         send_command_special_input(0x04, 0x00);
                         numAssignedShortAddresses++;
@@ -436,6 +463,7 @@ int DALIDriver::assign_addresses_input(bool reset, int num_found)
     }
 		
     send_command_special_input(0x00, 0x00);
+    send_command_special(TERMINATE, 0x00);
     return numAssignedShortAddresses;
 
 }
