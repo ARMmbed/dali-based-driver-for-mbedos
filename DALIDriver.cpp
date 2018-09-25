@@ -134,7 +134,7 @@ void DALIDriver::go_to_scene(uint8_t addr, uint8_t scene) {
 event_msg DALIDriver::parse_event(uint32_t data) {
     event_msg msg;
     msg.addr = data >> 17;
-    msg.inst_type = data >> 10;
+    msg.inst_type = (data >> 10) & 0x7F;
     msg.info = data & 0x03FF;
     return msg;
 }
@@ -240,34 +240,38 @@ int DALIDriver::init_lights()
 {
     quiet_mode(true);
     // TODO: does this need to happen every time controller boots?
-    num_logical_units = assign_addresses();
-    return num_logical_units;
+    num_lights = assign_addresses();
+    return num_lights;
 }
 
 int DALIDriver::init_inputs() 
 {
     quiet_mode(true);
-    num_logical_units += assign_addresses_input(true, num_logical_units);
-    return num_logical_units;
+    num_inputs = assign_addresses_input(true, num_lights) - num_lights;
+    return num_inputs;
 }
 
 int DALIDriver::init() 
 {
-    num_lights = init_lights();
-    num_inputs = init_inputs() - num_lights;
+    num_logical_units = num_lights + num_inputs;
+    init_lights();
+    init_inputs();
     // Set the event scheme for all events to be address / instance id / event info
     set_event_scheme(0xFF, 0xFF, 0x01);
     for(int i = num_lights; i < num_inputs; i++){
         int inst = query_instances(i);
         for(int j = 0; j < inst; j++) {
             int inst_type = get_instance_type(i, j);
-            if (inst_type != 3) {
-                // Disable instances that are not PIR
+            if (inst_type == 4) {
+                // Disable lumen
                 disable_instance(i, j);
                 continue;
             }
+            enable_instance(i, j);
             // Filter events for PIR, only movement/no movement
-            set_event_filter(i, j, 0x18);
+            if (inst_type == 3) {
+                set_event_filter(i, j, 0x18);
+            }
         }
     }
     return num_lights + num_inputs;
