@@ -121,6 +121,7 @@ void ManchesterEncoder::attach(mbed::Callback<void(uint32_t)> status_cb) {
 }
 
 void ManchesterEncoder::detach() {
+    bit_recv_total = 8;
     _sensor_event_cb_save = _sensor_event_cb;
     _sensor_event_cb = NULL;
     clear_interrupts();
