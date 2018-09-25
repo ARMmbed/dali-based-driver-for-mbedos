@@ -75,6 +75,7 @@ void ManchesterEncoder::send_24(uint32_t data_out) {
     }
     // Send the stop condition
     _output_pin = _idle_state;
+    bit_recv_total = 8;
     core_util_critical_section_exit();
     _input_pin.rise(callback(this, &ManchesterEncoder::rise_handler));
     wait_us(13500);
@@ -106,9 +107,9 @@ void ManchesterEncoder::send(uint16_t data_out) {
     }
     // Send the stop condition
     _output_pin = _idle_state;
+    bit_recv_total = 8;
     core_util_critical_section_exit();
     detach();
-    bit_recv_total = 8;
     _input_pin.rise(callback(this, &ManchesterEncoder::rise_handler));
     wait_us(13500);
 } 
@@ -120,8 +121,13 @@ void ManchesterEncoder::attach(mbed::Callback<void(uint32_t)> status_cb) {
 }
 
 void ManchesterEncoder::detach() {
+    _sensor_event_cb_save = _sensor_event_cb;
     _sensor_event_cb = NULL;
     clear_interrupts();
+}
+
+void ManchesterEncoder::reattach() {
+    attach(_sensor_event_cb_save);
 }
 
 void ManchesterEncoder::clear_interrupts() {
@@ -167,6 +173,7 @@ void ManchesterEncoder::read_state() {
 
 void ManchesterEncoder::rise_handler() {
     bit_count = 0;
+    recv_data = 0;
     clear_interrupts();
     // fall handler called in less than 1.5*_half_bit_time means start condition
     _input_pin.fall(callback(this, &ManchesterEncoder::irq_handler));

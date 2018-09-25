@@ -87,6 +87,8 @@ public:
     int init_inputs();
 
     void attach(mbed::Callback<void(uint32_t)> status_cb);
+    void detach();
+    void reattach();
 
     
     /** Send a standard command on the bus 
@@ -97,6 +99,8 @@ public:
     */ 
     void send_command_standard(uint8_t address, uint8_t opcode);
     void send_command_standard_input(uint8_t address, uint8_t instance, uint8_t opcode);
+    
+    void quiet_mode(bool on);
 		
     /** Send a special command on the bus 
     *
@@ -246,6 +250,9 @@ public:
     uint32_t recv();
     
     event_msg parse_event(uint32_t);
+    
+    // The encoder for the bus signals
+    ManchesterEncoder encoder;
 
 private:
     
@@ -297,8 +304,6 @@ private:
     */
     int getIndexOfLogicalUnit(uint8_t addr);
 
-    // The encoder for the bus signals
-    ManchesterEncoder encoder;
     // The number of logical units on the bus
     int num_logical_units;
 };

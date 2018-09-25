@@ -45,6 +45,8 @@ public:
     
     void detach();
 
+    void reattach();
+
 private:
     
     void clear_interrupts();
@@ -73,6 +75,7 @@ private:
     Timeout t2;
     
     Callback<void(uint32_t)> _sensor_event_cb;
+    Callback<void(uint32_t)> _sensor_event_cb_save;
 };
 
 #endif

@@ -135,12 +135,23 @@ event_msg DALIDriver::parse_event(uint32_t data) {
     event_msg msg;
     msg.addr = data >> 17;
     msg.inst_type = data >> 10;
-    msg.info = data & 0x3FF;
+    msg.info = data & 0x03FF;
     return msg;
 }
 
 void DALIDriver::attach(mbed::Callback<void(uint32_t)> status_cb) {
+    quiet_mode(false);
     encoder.attach(status_cb);
+}
+
+void DALIDriver::detach() {
+    quiet_mode(true);
+    encoder.detach();
+}
+
+void DALIDriver::reattach() {
+    quiet_mode(false);
+    encoder.reattach();
 }
 
 void DALIDriver::send_command_special(uint8_t address, uint8_t opcode) 
@@ -217,8 +228,17 @@ uint8_t DALIDriver::get_group_addr(uint8_t group_number)
     return mask | group_number;
 }
 
+void DALIDriver::quiet_mode(bool on) {
+    if (on) {
+        send_command_standard_input(0xFF, 0xFE, 0x1D);
+    } else {
+        send_command_standard_input(0xFF, 0xFE, 0x1E);
+    }
+}
+
 int DALIDriver::init_lights() 
 {
+    quiet_mode(true);
     // TODO: does this need to happen every time controller boots?
     num_logical_units = assign_addresses();
     return num_logical_units;
@@ -226,6 +246,7 @@ int DALIDriver::init_lights()
 
 int DALIDriver::init_inputs() 
 {
+    quiet_mode(true);
     num_logical_units += assign_addresses_input(true, num_logical_units);
     return num_logical_units;
 }
