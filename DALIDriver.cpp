@@ -251,6 +251,63 @@ int DALIDriver::init_inputs()
     return num_logical_units;
 }
 
+int DALIDriver::init() 
+{
+    num_lights = init_lights();
+    num_inputs = init_inputs() - num_lights;
+    // Set the event scheme for all events to be address / instance id / event info
+    set_event_scheme(0xFF, 0xFF, 0x01);
+    for(int i = num_lights; i < num_inputs; i++){
+        int inst = query_instances(i);
+        for(int j = 0; j < inst; j++) {
+            int inst_type = get_instance_type(i, j);
+            if (inst_type != 3) {
+                // Disable instances that are not PIR
+                disable_instance(i, j);
+                continue;
+            }
+            // Filter events for PIR, only movement/no movement
+            set_event_filter(i, j, 0x18);
+        }
+    }
+    return num_lights + num_inputs;
+}
+
+void DALIDriver::set_event_scheme(uint8_t addr, uint8_t inst, uint8_t scheme) {
+    // Put scheme in DTR0
+    send_command_special_input(0x30, scheme);
+    // Set the event scheme
+    send_command_standard_input(addr, inst, 0x67);
+    send_command_standard_input(addr, inst, 0x67);
+}
+
+void DALIDriver::set_event_filter(uint8_t addr, uint8_t inst, uint8_t filter) {
+    // Put filter in DTR0
+    send_command_special_input(0x30, filter);
+    // Set the event filter
+    send_command_standard_input(addr, inst, 0x68);
+    send_command_standard_input(addr, inst, 0x68);
+}
+
+uint8_t DALIDriver::get_instance_type(uint8_t addr, uint8_t inst) {
+    send_command_standard_input(addr, inst, 0x80);
+    return encoder.recv();  
+}
+uint8_t DALIDriver::get_instance_status(uint8_t addr, uint8_t inst) {
+    send_command_standard_input(addr, inst, 0x86);
+    return encoder.recv(); 
+}
+
+void DALIDriver::disable_instance(uint8_t addr, uint8_t inst) {
+    send_command_standard_input(addr, inst, 0x63); 
+    send_command_standard_input(addr, inst, 0x63); 
+}
+
+void DALIDriver::enable_instance(uint8_t addr, uint8_t inst) {
+    send_command_standard_input(addr, inst, 0x62); 
+    send_command_standard_input(addr, inst, 0x62); 
+}
+
 int DALIDriver::get_highest_address() {
     int highestAssigned = -1;
     // Start initialization phase

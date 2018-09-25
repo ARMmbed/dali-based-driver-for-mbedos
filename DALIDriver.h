@@ -83,6 +83,7 @@ public:
     *   @returns    the number of logical units on the bus 
     *       
     */
+    int init();
     int init_lights();
     int init_inputs();
 
@@ -99,6 +100,13 @@ public:
     */ 
     void send_command_standard(uint8_t address, uint8_t opcode);
     void send_command_standard_input(uint8_t address, uint8_t instance, uint8_t opcode);
+    
+    void set_event_scheme(uint8_t addr, uint8_t inst, uint8_t scheme);
+    void set_event_filter(uint8_t addr, uint8_t inst, uint8_t filter);
+    uint8_t get_instance_type(uint8_t addr, uint8_t inst);
+    uint8_t get_instance_status(uint8_t addr, uint8_t inst);
+    void disable_instance(uint8_t addr, uint8_t inst);
+    void enable_instance(uint8_t addr, uint8_t inst);
     
     void quiet_mode(bool on);
 		
@@ -253,11 +261,27 @@ public:
     
     // The encoder for the bus signals
     ManchesterEncoder encoder;
+    
+    int get_num_lights() {
+        return num_lights;
+    }
+    
+    int get_num_inputs() {
+        return num_inputs;
+    }
+    
+    int get_input_addr_start() {
+        return num_lights;
+    }
 
 private:
     
     // Some commands must be sent twice, utility function to do that
     void send_twice(uint8_t addr, uint8_t opcode);
+
+    int num_lights;
+    int num_inputs;
+    int inputs_start;
     
     /** Assign addresses to the logical units on the bus 
     *
