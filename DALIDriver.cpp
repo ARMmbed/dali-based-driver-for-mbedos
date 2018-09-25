@@ -318,8 +318,6 @@ int DALIDriver::get_highest_address() {
     send_command_special(RANDOMISE, 0x00);
     wait_ms(100);
 
-    bool found_non_mask =  false;
-
     while(true) {
         // Set the search address to the highest range
         set_search_address(0xFFFFFF);
@@ -374,7 +372,6 @@ int DALIDriver::get_highest_address() {
 // Return number of logical units on the bus
 int DALIDriver::assign_addresses(bool reset) 
 {
-    int searchCompleted = false;
     uint8_t numAssignedShortAddresses = 0;
     int assignedAddresses[63] = {false}; 
     int highestAssigned = -1;
@@ -469,7 +466,6 @@ int DALIDriver::assign_addresses(bool reset)
 int DALIDriver::assign_addresses_input(bool reset, int num_found) 
 {
     send_command_special(TERMINATE, 0x00);
-    int searchCompleted = false;
     uint8_t numAssignedShortAddresses = num_found;
     int assignedAddresses[63] = {false}; 
     int highestAssigned = -1;
@@ -504,7 +500,6 @@ int DALIDriver::assign_addresses_input(bool reset, int num_found)
         if (!yes) {
             break;
         }
-        printf("hi\r\n");
         if(numAssignedShortAddresses < 63) {
             uint32_t searchAddr = 0xFFFFFF;
             for(int i = 23; i>=0; i--) {
