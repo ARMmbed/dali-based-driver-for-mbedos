@@ -109,7 +109,6 @@ void ManchesterEncoder::send(uint16_t data_out) {
     _output_pin = _idle_state;
     bit_recv_total = 8;
     core_util_critical_section_exit();
-    detach();
     _input_pin.rise(callback(this, &ManchesterEncoder::rise_handler));
     wait_us(13500);
 } 
