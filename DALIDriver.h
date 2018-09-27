@@ -303,6 +303,26 @@ public:
     */
     void enable_instance(uint8_t addr, uint8_t inst);
     
+    /** Get the temperature from a sensor
+    *
+    *   @param address      The address byte for command
+    *   @param instance     The instance byte for command
+    *   @returns
+    *       The temperature in celcius
+    *
+    */    
+    float get_temperature(uint8_t addr, uint8_t instance);
+    
+    /** Get the humidity from a sensor
+    *
+    *   @param address      The address byte for command
+    *   @param instance     The instance byte for command
+    *   @returns
+    *       The humidity percentage
+    *
+    */ 
+    float get_humidity(uint8_t addr, uint8_t instance);
+    
     /** Set quiet mode status (event messages on/off
     *
     * @param on     whether quiet mode is on or off

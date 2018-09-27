@@ -228,12 +228,31 @@ uint8_t DALIDriver::get_group_addr(uint8_t group_number)
     return mask | group_number;
 }
 
-void DALIDriver::quiet_mode(bool on) {
+void DALIDriver::quiet_mode(bool on) 
+{
     if (on) {
         send_command_standard_input(0xFF, 0xFE, 0x1D);
     } else {
         send_command_standard_input(0xFF, 0xFE, 0x1E);
     }
+}
+
+float DALIDriver::get_temperature(uint8_t addr, uint8_t instance) 
+{
+    send_command_standard_input(addr, instance, 0x8C);
+    int temp = encoder.recv();
+    send_command_standard_input(addr, instance, 0x8D);
+    int temp2 = encoder.recv();
+    // Temperature, 10 bit, resolution 0.1C, -5C - 60C (value of 0 = -5C, 1 = -4.9C, etc.)
+    return ((float)((temp << 2) | (temp2 >> 6)) - 50.0f)*0.1f;
+}
+
+float DALIDriver::get_humidity(uint8_t addr, uint8_t instance) 
+{
+    send_command_standard_input(addr, instance, 0x8C);
+    int humidity = encoder.recv();
+    // Humidity, 8 bit, resolution 0.5%, 0-100%
+    return ((float)humidity)/2.0f;
 }
 
 int DALIDriver::init_lights() 
@@ -271,7 +290,7 @@ int DALIDriver::init()
             enable_instance(i, j);
             // Filter events for PIR, only movement/no movement
             if (inst_type == 3) {
-                set_event_filter(i, j, 0x18);
+                set_event_filter(i, j, 0x1C);
             }
         }
     }
