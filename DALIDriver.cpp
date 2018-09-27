@@ -258,7 +258,8 @@ int DALIDriver::init()
     init_inputs();
     // Set the event scheme for all events to be address / instance id / event info
     set_event_scheme(0xFF, 0xFF, 0x01);
-    for(int i = num_lights; i < num_inputs; i++){
+    wait(1);
+    for(int i = num_lights; i < num_inputs + num_lights; i++){
         int inst = query_instances(i);
         for(int j = 0; j < inst; j++) {
             int inst_type = get_instance_type(i, j);
