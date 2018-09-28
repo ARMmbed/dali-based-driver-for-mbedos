@@ -62,6 +62,13 @@ enum CommandOpCodes {
     SET_MAX_LEVEL = 0x2A
 };
 
+enum InstanceType {
+    GENERIC = 0,
+    OCCUPANCY = 3,
+    LIGHT = 4,
+    BUTTON = 1
+};
+
 #define YES 0xFF
 
 class DALIDriver {
@@ -85,6 +92,34 @@ public:
     */
     int init();
 
+    /** Initialise the luminaires on the bus (give them addresses) 
+    *
+    *   @returns    the number of luminaires on the bus 
+    *       
+    */
+    int init_lights();
+    
+    /** Initialise the inputs on the bus (give them addresses) 
+    *
+    *   @returns    the number of input devices on the bus 
+    *       
+    */
+    int init_inputs();
+
+    /** Attach a callback when input event is generated
+    *   
+    *   @param status_cb callback to take in the 32 bit event message
+    */
+    void attach(mbed::Callback<void(uint32_t)> status_cb);
+    
+    /** Detach the callback 
+    */
+    void detach();
+    
+    /** Reattach the callback
+    */
+    void reattach();
+
     
     /** Send a standard command on the bus 
     *
@@ -93,6 +128,16 @@ public:
     *
     */ 
     void send_command_standard(uint8_t address, uint8_t opcode);
+    
+    /** Send a standard command on the bus to input devices
+    *   
+    *   @param address      The address byte for command
+    *   @param instance     The instance byte for command
+    *   @param opcode       The opcode byte 
+    *
+    */ 
+    void send_command_standard_input(uint8_t address, uint8_t instance, uint8_t opcode);
+   
 		
     /** Send a special command on the bus 
     *
@@ -101,6 +146,14 @@ public:
     *
     */ 
     void send_command_special(uint8_t address, uint8_t opcode);
+    
+    /** Send a special command on the bus to input devices
+    *
+    *   @param instance     The instance byte for command
+    *   @param opcode       The opcode byte 
+    *
+    */ 
+    void send_command_special_input(uint8_t instance, uint8_t opcode);
 
     /** Send a direct arc power command on the bus 
     *
@@ -181,6 +234,101 @@ public:
     *
     */
     uint8_t get_fade(uint8_t addr);
+    
+    /** Get the number of instances on an input device
+    * 
+    * @param addr   8 bit address of the input device
+    * @returns 
+    *       The number of instances on an input device 0 to 31
+    *
+    */
+    uint32_t query_instances(uint8_t addr);
+    
+    /** Set the event scheme -- section 9.6.3 of iec62386-103
+    * 0 (default) -Instance addressing, using instance type and number.
+    * 1 - Device addressing, using short address and instance type.
+    * 2 - Device/instance addressing, using short address and instance number.
+    * 3 - Device group addressing, using device group and instance type.
+    * 4 - Instance group addressing, using instance group and type.
+    *
+    *   @param address      The address byte for command
+    *   @param instance     The instance byte for command
+    *   @param scheme        The scheme [0, 4]
+    *
+    */
+    void set_event_scheme(uint8_t addr, uint8_t inst, uint8_t scheme);
+    
+    /** Set the event scheme -- section 9.6.4 of iec62386-103
+    *
+    *   @param address      The address byte for command
+    *   @param instance     The instance byte for command
+    *   @param filter       The filter for DTR0
+    *
+    */
+    void set_event_filter(uint8_t addr, uint8_t inst, uint8_t filter);
+    
+    /** Get the instance type -- 9.4.3 of iec62386-103
+    *
+    *   @param address      The address byte for command
+    *   @param instance     The instance byte for command
+    *   @returns
+    *       The instance type number [0,31], see InstanceType enum for values
+    *
+    */
+    uint8_t get_instance_type(uint8_t addr, uint8_t inst);
+    
+    /** Get the instance status
+    *
+    *   @param address      The address byte for command
+    *   @param instance     The instance byte for command
+    *   @returns
+    *       status -- 255 for enabled, 0 for disabled
+    *
+    */
+    uint8_t get_instance_status(uint8_t addr, uint8_t inst);
+    
+    /** Disable the instance
+    *
+    *   @param address      The address byte for command
+    *   @param instance     The instance byte for command
+    *
+    */
+    void disable_instance(uint8_t addr, uint8_t inst);
+    
+    /** Enable the instance
+    *
+    *   @param address      The address byte for command
+    *   @param instance     The instance byte for command
+    *
+    */
+    void enable_instance(uint8_t addr, uint8_t inst);
+    
+    /** Get the temperature from a sensor
+    *
+    *   @param address      The address byte for command
+    *   @param instance     The instance byte for command
+    *   @returns
+    *       The temperature in celcius
+    *
+    */    
+    float get_temperature(uint8_t addr, uint8_t instance);
+    
+    /** Get the humidity from a sensor
+    *
+    *   @param address      The address byte for command
+    *   @param instance     The instance byte for command
+    *   @returns
+    *       The humidity percentage
+    *
+    */ 
+    float get_humidity(uint8_t addr, uint8_t instance);
+    
+    /** Set quiet mode status (event messages on/off
+    *
+    * @param on     whether quiet mode is on or off
+    *
+    */
+    void quiet_mode(bool on);
 
     /** Get the physical minimum 
     *
@@ -234,22 +382,62 @@ public:
     *
     */ 
     void go_to_scene(uint8_t addr, uint8_t scene);
+    
+    /** Call recv on the bus
+    *
+    *   @returns    the messagein the recv buffer for the bus (encoder class)
+    *
+    */
+    uint32_t recv();
+    
+    /** Parse the event message
+    *
+    *   @param msg      the 32 bit event message
+    *   @returns        the event_msg struct containing addr, instance type, and event info
+    *
+    */
+    event_msg parse_event(uint32_t msg);
 
     static const uint8_t broadcast_addr = 0xFF;
+    
+    // The encoder for the bus signals
+    ManchesterEncoder encoder;
+    
+    int get_num_lights() {
+        return num_lights;
+    }
+    
+    int get_num_inputs() {
+        return num_inputs;
+    }
+    
+    int get_input_addr_start() {
+        return num_lights;
+    }
 
 private:
     
     // Some commands must be sent twice, utility function to do that
     void send_twice(uint8_t addr, uint8_t opcode);
     
-    /** Assign addresses to the logical units on the bus 
+    /** Assign addresses to the luminaires on the bus 
     *
-    *   @returns    The number of logical units found on bus
+    *   @returns    The number of input devices found on bus
     *
     *   NOTE: This process is mostly copied from page 82 of iec62386-102
     *   The addresses will be in the range [0, number units - 1]
     */ 
     int assign_addresses(bool reset = false);
+
+    /** Assign addresses to the input devices on the bus 
+    *
+    *   @param num_found    The number of luminaires already found (so that the starting address is last_luminaire + 1)
+    *   @returns            The number of unput devices found on bus
+    *
+    *   NOTE: This process is mostly copied from page 82 of iec62386-102
+    *   The addresses will be in the range [0, number units - 1]
+    */ 
+    int assign_addresses_input(bool reset = false, int num_found = 0);
 
     /** Assign addresses to the logical units on the bus 
     *
@@ -260,7 +448,7 @@ private:
     */ 
     int get_highest_address();
 
-    /** Set the controller search address 
+    /** Set the controller search address for luminaires
     * This address will be used in search commands to determine what 
     * control units have this address or a numerically lower address
     *
@@ -268,6 +456,15 @@ private:
     *
     */ 
     void set_search_address(uint32_t val);
+    
+    /** Set the controller search address  for input devices
+    * This address will be used in search commands to determine what 
+    * control units have this address or a numerically lower address
+    *
+    *   @param val    Search address valued (only lower 24 bits are used)
+    *
+    */ 
+    void set_search_address_input(uint32_t val);
 
     /** Check the response from the bus 
     *
@@ -285,10 +482,14 @@ private:
     */
     int getIndexOfLogicalUnit(uint8_t addr);
 
-    // The encoder for the bus signals
-    ManchesterEncoder encoder;
     // The number of logical units on the bus
     int num_logical_units;
+    // Number of luminaires on the bus
+    int num_lights;
+    // Number of input devices on the bus
+    int num_inputs;
+    // Address where input devices start
+    int inputs_start;
 };
 
 #endif

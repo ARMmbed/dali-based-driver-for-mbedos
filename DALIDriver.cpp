@@ -85,6 +85,17 @@ uint8_t DALIDriver::get_fade(uint8_t addr) {
     return resp;
 }
 
+uint32_t DALIDriver::recv() {
+    return encoder.recv();
+}
+
+uint32_t DALIDriver::query_instances(uint8_t addr) {
+    encoder.set_recv_frame_length(8);
+    send_command_standard_input(addr, 0xFE, 0x35);
+    uint32_t resp = encoder.recv();
+    return resp;
+}
+
 void DALIDriver::turn_on(uint8_t addr) {
     send_command_standard(addr, ON_AND_STEP_UP);
 }
@@ -120,9 +131,46 @@ void DALIDriver::go_to_scene(uint8_t addr, uint8_t scene) {
     send_twice(addr, GO_TO_SCENE + scene);
 }
 
+event_msg DALIDriver::parse_event(uint32_t data) {
+    event_msg msg;
+    msg.addr = data >> 17;
+    msg.inst_type = (data >> 10) & 0x7F;
+    msg.info = data & 0x03FF;
+    return msg;
+}
+
+void DALIDriver::attach(mbed::Callback<void(uint32_t)> status_cb) {
+    quiet_mode(false);
+    encoder.attach(status_cb);
+}
+
+void DALIDriver::detach() {
+    quiet_mode(true);
+    encoder.detach();
+}
+
+void DALIDriver::reattach() {
+    quiet_mode(false);
+    encoder.reattach();
+}
+
 void DALIDriver::send_command_special(uint8_t address, uint8_t opcode) 
 {
     encoder.send(((uint16_t)address << 8) | opcode);
+}
+
+void DALIDriver::send_command_special_input(uint8_t instance, uint8_t opcode) 
+{
+    encoder.send_24(((uint32_t)0xC1 << 16) | ((uint16_t)instance << 8) | opcode);
+}
+
+void DALIDriver::send_command_standard_input(uint8_t address, uint8_t instance, uint8_t opcode) 
+{
+    // Get the upper bit
+    uint8_t mask = address & 0x80;
+    // Change address to have 1 in LSb to signify 'standard command'
+    address = mask | ((address << 1) + 1);
+    encoder.send_24(((uint32_t)address << 16) | ((uint16_t) instance<< 8) | opcode);
 }
 
 void DALIDriver::send_command_standard(uint8_t address, uint8_t opcode) 
@@ -166,6 +214,13 @@ void DALIDriver::set_search_address(uint32_t val)
     send_command_special(SEARCHADDRL, val & 0x0000FF);
 }
 
+void DALIDriver::set_search_address_input(uint32_t val) 
+{
+    send_command_special_input(0x05, val >> 16);
+    send_command_special_input(0x06, (val >> 8) & (0x00FF));
+    send_command_special_input(0x07, val & 0x0000FF);
+}
+
 uint8_t DALIDriver::get_group_addr(uint8_t group_number)
 {
     uint8_t mask = 1 << 7;
@@ -173,11 +228,108 @@ uint8_t DALIDriver::get_group_addr(uint8_t group_number)
     return mask | group_number;
 }
 
+void DALIDriver::quiet_mode(bool on) 
+{
+    if (on) {
+        send_command_standard_input(0xFF, 0xFE, 0x1D);
+    } else {
+        send_command_standard_input(0xFF, 0xFE, 0x1E);
+    }
+}
+
+float DALIDriver::get_temperature(uint8_t addr, uint8_t instance) 
+{
+    send_command_standard_input(addr, instance, 0x8C);
+    int temp = encoder.recv();
+    send_command_standard_input(addr, instance, 0x8D);
+    int temp2 = encoder.recv();
+    // Temperature, 10 bit, resolution 0.1C, -5C - 60C (value of 0 = -5C, 1 = -4.9C, etc.)
+    return ((float)((temp << 2) | (temp2 >> 6)) - 50.0f)*0.1f;
+}
+
+float DALIDriver::get_humidity(uint8_t addr, uint8_t instance) 
+{
+    send_command_standard_input(addr, instance, 0x8C);
+    int humidity = encoder.recv();
+    // Humidity, 8 bit, resolution 0.5%, 0-100%
+    return ((float)humidity)/2.0f;
+}
+
+int DALIDriver::init_lights() 
+{
+    quiet_mode(true);
+    // TODO: does this need to happen every time controller boots?
+    num_lights = assign_addresses();
+    return num_lights;
+}
+
+int DALIDriver::init_inputs() 
+{
+    quiet_mode(true);
+    num_inputs = assign_addresses_input(true, num_lights) - num_lights;
+    return num_inputs;
+}
+
 int DALIDriver::init() 
 {
-    // TODO: does this need to happen every time controller boots?
-    num_logical_units = assign_addresses();
-    return num_logical_units;
+    num_logical_units = num_lights + num_inputs;
+    init_lights();
+    init_inputs();
+    // Set the event scheme for all events to be address / instance id / event info
+    set_event_scheme(0xFF, 0xFF, 0x01);
+    wait(1);
+    for(int i = num_lights; i < num_inputs + num_lights; i++){
+        int inst = query_instances(i);
+        for(int j = 0; j < inst; j++) {
+            int inst_type = get_instance_type(i, j);
+            if (inst_type == 4) {
+                // Disable lumen
+                disable_instance(i, j);
+                continue;
+            }
+            enable_instance(i, j);
+            // Filter events for PIR, only movement/no movement
+            if (inst_type == 3) {
+                set_event_filter(i, j, 0x1C);
+            }
+        }
+    }
+    return num_lights + num_inputs;
+}
+
+void DALIDriver::set_event_scheme(uint8_t addr, uint8_t inst, uint8_t scheme) {
+    // Put scheme in DTR0
+    send_command_special_input(0x30, scheme);
+    // Set the event scheme
+    send_command_standard_input(addr, inst, 0x67);
+    send_command_standard_input(addr, inst, 0x67);
+}
+
+void DALIDriver::set_event_filter(uint8_t addr, uint8_t inst, uint8_t filter) {
+    // Put filter in DTR0
+    send_command_special_input(0x30, filter);
+    // Set the event filter
+    send_command_standard_input(addr, inst, 0x68);
+    send_command_standard_input(addr, inst, 0x68);
+}
+
+uint8_t DALIDriver::get_instance_type(uint8_t addr, uint8_t inst) {
+    send_command_standard_input(addr, inst, 0x80);
+    return encoder.recv();  
+}
+uint8_t DALIDriver::get_instance_status(uint8_t addr, uint8_t inst) {
+    send_command_standard_input(addr, inst, 0x86);
+    return encoder.recv(); 
+}
+
+void DALIDriver::disable_instance(uint8_t addr, uint8_t inst) {
+    send_command_standard_input(addr, inst, 0x63); 
+    send_command_standard_input(addr, inst, 0x63); 
+}
+
+void DALIDriver::enable_instance(uint8_t addr, uint8_t inst) {
+    send_command_standard_input(addr, inst, 0x62); 
+    send_command_standard_input(addr, inst, 0x62); 
 }
 
 int DALIDriver::get_highest_address() {
@@ -189,8 +341,6 @@ int DALIDriver::get_highest_address() {
     send_command_special(RANDOMISE, 0x00);
     send_command_special(RANDOMISE, 0x00);
     wait_ms(100);
-
-    bool found_non_mask =  false;
 
     while(true) {
         // Set the search address to the highest range
@@ -246,7 +396,6 @@ int DALIDriver::get_highest_address() {
 // Return number of logical units on the bus
 int DALIDriver::assign_addresses(bool reset) 
 {
-    int searchCompleted = false;
     uint8_t numAssignedShortAddresses = 0;
     int assignedAddresses[63] = {false}; 
     int highestAssigned = -1;
@@ -281,7 +430,6 @@ int DALIDriver::assign_addresses(bool reset)
         if (!yes) {
             break;
         }
-        printf("hi\r\n");
         if(numAssignedShortAddresses < 63) {
             uint32_t searchAddr = 0xFFFFFF;
             for(int i = 23; i>=0; i--) {
@@ -334,6 +482,100 @@ int DALIDriver::assign_addresses(bool reset)
     }
 		
     send_command_special(TERMINATE, 0x00);
+    return numAssignedShortAddresses;
+
+}
+
+// Return number of logical units on the bus
+int DALIDriver::assign_addresses_input(bool reset, int num_found) 
+{
+    send_command_special(TERMINATE, 0x00);
+    uint8_t numAssignedShortAddresses = num_found;
+    int assignedAddresses[63] = {false}; 
+    int highestAssigned = -1;
+    
+    // Put 0x00 in DTR0
+    send_command_special_input(0x30, 0x00);
+    // Set operating mode to DTR0
+    send_command_standard_input(0xFF, 0xFE, 0x18);
+    send_command_standard_input(0xFF, 0xFE, 0x18);
+
+    // DTR0 MASK
+    send_command_special_input(0x30, 0xFF);
+    // Set short address to DTR0
+    send_command_standard_input(0x7F, 0xFE, 0x14);
+    send_command_standard_input(0x7F, 0xFE, 0x14);
+    // Start initialization phase for devices
+    send_command_special_input(0x01, 0xFF);
+    send_command_special_input(0x01, 0xFF);
+    // Assign all units a random address
+    send_command_special_input(0x02, 0x00);
+    send_command_special_input(0x02, 0x00);
+    wait_ms(100);
+    
+    while(true) {
+        // Set the search address to the highest range
+        set_search_address_input(0xFFFFFF);
+        // Compare logical units search address to global search address
+        send_command_special_input(0x03, 0x00);
+        // Check if any device responds yes
+        bool yes = check_response(YES);       
+        // If no devices are unassigned (all withdrawn), we are done
+        if (!yes) {
+            break;
+        }
+        if(numAssignedShortAddresses < 63) {
+            uint32_t searchAddr = 0xFFFFFF;
+            for(int i = 23; i>=0; i--) {
+                uint32_t mask = 1 << i;
+                searchAddr = searchAddr & (~mask);
+                // Set a new search address
+                set_search_address_input(searchAddr);
+                send_command_special_input(0x03, 0x00);
+                // Check if any devices match
+                bool yes = check_response(YES);
+                if(!yes) {
+                    //No unit here, revert the mask
+                    searchAddr = searchAddr | mask;
+                }
+                // If yes, then we found at least one device
+            }
+            set_search_address_input(searchAddr);
+            send_command_special_input(0x03, 0x00);
+            bool yes = check_response(YES);
+            if (yes) {
+                // We found a unit, let's program the short address with a new address
+                // Give it a temporary short address
+                uint8_t new_addr = numAssignedShortAddresses;
+                if (new_addr < 63) {
+                    if (assignedAddresses[new_addr] == true) {
+                        // Duplicate addr?
+                    }   
+                    else {
+                        // Program new address as short address
+                        send_command_special_input(0x08, new_addr);
+                        // Tell unit to withdraw (no longer respond to search queries)
+                        send_command_special_input(0x04, 0x00);
+                        numAssignedShortAddresses++;
+                        assignedAddresses[new_addr] = true;
+                        if(new_addr > highestAssigned) 
+                            highestAssigned = new_addr;
+                    }
+                }
+                else {
+                    // expected < 63 ?
+                }
+            }
+            else {
+                // No device found
+            }
+        }
+        // Refresh initialization state
+        send_command_special_input(0x01, 0x7F);
+        send_command_special_input(0x01, 0x7F);
+    }
+		
+    send_command_special_input(0x00, 0x00);
     return numAssignedShortAddresses;
 
 }
