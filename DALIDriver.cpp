@@ -73,6 +73,12 @@ uint8_t DALIDriver::get_level(uint8_t addr) {
     return resp;
 }
 
+uint8_t DALIDriver::get_error(uint8_t addr) {
+    send_command_standard(addr, QUERY_ERROR);
+    uint8_t resp = encoder.recv() & 0x03;
+    return resp;
+}
+
 uint8_t DALIDriver::get_phm(uint8_t addr) {
     send_command_standard(addr, QUERY_PHM);
     uint8_t resp = encoder.recv(); 
