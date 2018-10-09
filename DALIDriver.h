@@ -45,7 +45,8 @@ enum CommandOpCodes {
     ON_AND_STEP_UP = 0x08,
     QUERY_GEAR_GROUPS_L = 0xC0, // get lower byte of gear groups status
     QUERY_GEAR_GROUPS_H = 0xC1, // get upper byte of gear groups status
-    QUERY_ACTUAL_LEVEL = 0xA0,
+    QUERY_ACTUAL_LEVEL = 0x91,
+    QUERY_ERROR = 0xA0,
     QUERY_PHM = 0x9A,
     QUERY_FADE = 0xA5,
     READ_MEM_LOC = 0xC5,
@@ -224,6 +225,15 @@ public:
     *
     */
     uint8_t get_level(uint8_t addr);
+
+    /** Get the current error status
+    *
+    *   @param addr    8 bit address (device or group)
+    *   @returns
+    *       Error status from QUERY ERROR command
+    *
+    */
+    uint8_t get_error(uint8_t addr);
 
     /** Get the fade time and fade rate 
     *
