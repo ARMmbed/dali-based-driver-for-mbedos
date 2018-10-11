@@ -33,6 +33,12 @@ int main() {
 
     // Group go to scene 2
     dali.go_to_scene(group_addr, 2);
+    
+    // wait for 5 seconds
+    wait(5);
+    
+    // Turn off all lights using the broadcast address
+    dali.turn_off(DALIDriver::broadcast_addr);
 }
 ```
 
