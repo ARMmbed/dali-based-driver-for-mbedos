@@ -1,4 +1,4 @@
-/* Manchester Encoder Library 
+/* Manchester Encoder Library
  * Copyright (c) 2018 ARM Limited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,7 +18,6 @@
 
 #include "mbed.h"
 
-
 struct event_msg {
     uint8_t addr;
     uint8_t inst_type;
@@ -30,25 +29,25 @@ public:
     // Flag data ready
     volatile bool data_ready;
 
-    ManchesterEncoder(PinName out_pin, PinName in_pin, int baud, bool idle_state = 0);
-   
-    // Blocking receive call 
+    ManchesterEncoder(PinName out_pin, PinName in_pin, int baud,
+                      bool idle_state = 0);
+
+    // Blocking receive call
     int recv();
-    
+
     void send_24(uint32_t data_out);
 
     void set_recv_frame_length(int num);
 
     void send(uint16_t data_out);
-    
+
     void attach(mbed::Callback<void(uint32_t)> status_cb);
-    
+
     void detach();
 
     void reattach();
 
 private:
-    
     void clear_interrupts();
 
     void stop();
@@ -56,14 +55,14 @@ private:
     void irq_handler();
 
     void read_state();
- 
+
     void rise_handler();
-    
+
     // Pin to output encoded data
     DigitalOut _output_pin;
     // Pin to read encoded data
     InterruptIn _input_pin;
-    // Half the time for each bit (1/(2*baud)) 
+    // Half the time for each bit (1/(2*baud))
     int _half_bit_time;
     volatile uint32_t recv_data;
     volatile uint8_t bit_count;
@@ -73,10 +72,9 @@ private:
     bool _idle_state;
     Timeout t1;
     Timeout t2;
-    
+
     Callback<void(uint32_t)> _sensor_event_cb;
     Callback<void(uint32_t)> _sensor_event_cb_save;
 };
 
 #endif
- 
