@@ -98,6 +98,69 @@ uint8_t DALIDriver::get_fade(uint8_t addr)
     return resp;
 }
 
+uint8_t DALIDriver::query_color_type_features(uint8_t addr)
+{
+    encoder.set_recv_frame_length(8);
+    //send command to enable device type 8
+    send_command_special(ENABLE_DEVICE_TYPE, 0x08);
+    send_command_standard(addr, QUERY_COLOR_TYPE_FEATURES);
+    uint8_t resp = encoder.recv();
+    return resp;
+}
+
+uint8_t DALIDriver::query_rgbwaf_channels(uint8_t addr)
+{
+    uint8_t resp = query_color_type_features(addr);
+    return (resp & 0xE0) >> 5;
+}
+
+bool DALIDriver::query_temperature_capable(uint8_t addr) 
+{
+    uint8_t resp = query_color_type_features(addr);
+    return (resp & 0x02) >> 1;
+}    
+
+void DALIDriver::set_color(uint8_t addr, uint16_t temp)
+{
+    // Calculate Mirek from Kelvin
+    temp = 1000000/temp;
+    // Set Temp
+    send_command_special(DTR0, temp & 0x00FF);
+    send_command_special(DTR1, temp >> 8);
+    //send command to enable device type 8
+    send_command_special(ENABLE_DEVICE_TYPE, 0x08);
+    // Set the temporary color to the temperature
+    send_command_standard(addr, SET_TEMP_TEMPC); 
+    
+    // Activate color
+    //send command to enable device type 8
+    send_command_special(ENABLE_DEVICE_TYPE, 0x08);
+    send_command_standard(addr, COLOR_ACTIVATE); 
+}
+    
+void DALIDriver::set_color(uint8_t addr, uint8_t r, uint8_t g, uint8_t b, uint8_t dim)
+{
+    // Set RGB
+    send_command_special(DTR0, r);
+    send_command_special(DTR1, g);
+    send_command_special(DTR2, b);
+    //send command to enable device type 8
+    send_command_special(ENABLE_DEVICE_TYPE, 0x08);
+    send_command_standard(addr, SET_TEMP_RGB_DIM); 
+    
+    // Set dim
+    send_command_special(DTR0, dim);
+    //send command to enable device type 8
+    send_command_special(ENABLE_DEVICE_TYPE, 0x08);
+    send_command_standard(addr, SET_TEMP_WAF_DIM); 
+
+    // Activate color
+    //send command to enable device type 8
+    send_command_special(ENABLE_DEVICE_TYPE, 0x08);
+    send_command_standard(addr, COLOR_ACTIVATE); 
+}
+    
+
 uint32_t DALIDriver::recv()
 {
     return encoder.recv();

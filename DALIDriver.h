@@ -35,6 +35,7 @@ enum SpecialCommandOpAddr {
     QUERY_SHORT_ADDR = 0xBB,
     COMPARE = 0xA9,
     TERMINATE = 0xA1,
+    ENABLE_DEVICE_TYPE = 0xC1,
     WITHDRAW = 0xAB
 };
 
@@ -49,7 +50,12 @@ enum CommandOpCodes {
     QUERY_ERROR = 0x90,
     QUERY_PHM = 0x9A,
     QUERY_FADE = 0xA5,
+    QUERY_COLOR_TYPE_FEATURES = 0xF9,
     READ_MEM_LOC = 0xC5,
+    SET_TEMP_RGB_DIM = 0xEB,
+    SET_TEMP_TEMPC = 0xE7,
+    SET_TEMP_WAF_DIM = 0xEC,
+    COLOR_ACTIVATE = 0xE2,
 
     // Commands below are "send twice"
     SET_SCENE = 0x40,
@@ -248,6 +254,58 @@ public:
      *
      */
     uint32_t query_instances(uint8_t addr);
+
+    /** Get the color type features
+    *
+    * @param addr 8 bit address of the light
+    *
+    * @returns 
+    *       8 bit number represnting color type features (page 38 iec62386-209
+    *   bit 0       xy-coordinate capable       (0 = No) 
+    *   bit 1       Color temperature capable   (0 = No)
+    *   bit 2..4    Number of primary colors    ([0, 6])
+    *   bit 5..7    Number RGBWAF channels      ([0,6])
+    *
+    */
+    uint8_t query_color_type_features(uint8_t addr);
+
+    /** Query if the light is capable of color temperature
+    *
+    * @param addr 8 bit address of the light
+    *
+    * @returns boolean representing support 
+    *
+    */ 
+    bool query_temperature_capable(uint8_t addr);
+
+    /** Query number of rgbwaf channels 
+    *
+    * @param addr 8 bit address of the light
+    *
+    * @returns integer number of channels 
+    *
+    */ 
+    uint8_t query_rgbwaf_channels(uint8_t addr);
+
+    /** Set the color
+    *
+    *   @param addr 8 bit address of the light
+    *   @param r    level of red [0,254]
+    *   @param g    level of green [0,254]
+    *   @param b    level of blue [0,254]
+    *   @param dim  level of dim [0,254]
+    *
+    */ 
+    void set_color(uint8_t addr, uint8_t r, uint8_t g, uint8_t b, uint8_t dim = 0);
+
+    /** Set the color
+    *
+    *   @param addr     8 bit address of the light
+    *   @param temp     light temperature in kelvin [2500,7042]
+    *
+    */
+    void set_color(uint8_t addr, uint16_t temp);
+
 
     /** Set the event scheme -- section 9.6.3 of iec62386-103
      * 0 (default) -Instance addressing, using instance type and number.
