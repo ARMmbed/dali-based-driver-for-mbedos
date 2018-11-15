@@ -51,6 +51,7 @@ enum CommandOpCodes {
     QUERY_PHM = 0x9A,
     QUERY_FADE = 0xA5,
     QUERY_COLOR_TYPE_FEATURES = 0xF9,
+    QUERY_SCENE_LEVEL = 0xB0,
     READ_MEM_LOC = 0xC5,
     SET_TEMP_RGB_DIM = 0xEB,
     SET_TEMP_TEMPC = 0xE7,
@@ -64,6 +65,7 @@ enum CommandOpCodes {
     SET_MIN_LEVEL = 0x2B,
     REMOVE_FROM_SCENE = 0x50,
     REMOVE_FROM_GROUP = 0x70,
+    STORE_DTR_AS_SCENE =0x40,
     ADD_TO_GROUP = 0x60,
     SET_SHORT_ADDR = 0x80,
     SET_MAX_LEVEL = 0x2A
@@ -298,6 +300,18 @@ public:
     */ 
     void set_color(uint8_t addr, uint8_t r, uint8_t g, uint8_t b, uint8_t dim = 0);
 
+    /** Set the color scene
+    *
+    *   @param addr 8 bit address of the light
+    *   @param addr 8 bit scene number 
+    *   @param r    level of red [0,254]
+    *   @param g    level of green [0,254]
+    *   @param b    level of blue [0,254]
+    *   @param dim  level of dim [0,254]
+    *
+    */ 
+    void set_color_scene(uint8_t addr, uint8_t scene, uint8_t r, uint8_t g, uint8_t b, uint8_t dim = 0);
+
     /** Set the color
     *
     *   @param addr     8 bit address of the light
@@ -305,6 +319,15 @@ public:
     *
     */
     void set_color(uint8_t addr, uint16_t temp);
+
+    /** Set the color scene
+    *
+    *   @param addr     8 bit address of the light
+    *   @param addr 8 bit scene number 
+    *   @param temp     light temperature in kelvin [2500,7042]
+    *
+    */
+    void set_color_scene(uint8_t addr, uint8_t scene, uint16_t temp);
 
 
     /** Set the event scheme -- section 9.6.3 of iec62386-103
@@ -483,6 +506,9 @@ public:
     }
 
 private:
+    void set_color_temp(uint8_t addr, uint16_t temp);
+    void set_color_temp(uint8_t addr, uint8_t r, uint8_t g, uint8_t b, uint8_t dim = 0);
+
     // Some commands must be sent twice, utility function to do that
     void send_twice(uint8_t addr, uint8_t opcode);
 

@@ -120,7 +120,8 @@ bool DALIDriver::query_temperature_capable(uint8_t addr)
     return (resp & 0x02) >> 1;
 }    
 
-void DALIDriver::set_color(uint8_t addr, uint16_t temp)
+
+void DALIDriver::set_color_temp(uint8_t addr, uint16_t temp)
 {
     // Calculate Mirek from Kelvin
     temp = 1000000/temp;
@@ -131,14 +132,30 @@ void DALIDriver::set_color(uint8_t addr, uint16_t temp)
     send_command_special(ENABLE_DEVICE_TYPE, 0x08);
     // Set the temporary color to the temperature
     send_command_standard(addr, SET_TEMP_TEMPC); 
-    
+}
+
+void DALIDriver::set_color_scene(uint8_t addr, uint8_t scene, uint16_t temp)
+{
+    set_color_temp(addr, temp);    
+    // Get the current scene level
+    send_command_standard(addr, QUERY_SCENE_LEVEL + scene);
+    uint8_t scene_level = encoder.recv();
+    send_command_special(DTR0, scene_level);
+
+    // Store what is in the temperorary color as scene color and also scene level to DTR0
+    send_twice(addr, STORE_DTR_AS_SCENE + scene);
+}
+
+void DALIDriver::set_color(uint8_t addr, uint16_t temp)
+{
+    set_color_temp(addr, temp);    
     // Activate color
     //send command to enable device type 8
     send_command_special(ENABLE_DEVICE_TYPE, 0x08);
     send_command_standard(addr, COLOR_ACTIVATE); 
 }
-    
-void DALIDriver::set_color(uint8_t addr, uint8_t r, uint8_t g, uint8_t b, uint8_t dim)
+
+void DALIDriver::set_color_temp(uint8_t addr, uint8_t r, uint8_t g, uint8_t b, uint8_t dim)
 {
     // Set RGB
     send_command_special(DTR0, r);
@@ -153,7 +170,23 @@ void DALIDriver::set_color(uint8_t addr, uint8_t r, uint8_t g, uint8_t b, uint8_
     //send command to enable device type 8
     send_command_special(ENABLE_DEVICE_TYPE, 0x08);
     send_command_standard(addr, SET_TEMP_WAF_DIM); 
+}
+    
+void DALIDriver::set_color_scene(uint8_t addr, uint8_t scene, uint8_t r, uint8_t g, uint8_t b, uint8_t dim)
+{
+    set_color_temp(addr, r, g, b, dim);
+    // Get the current scene level
+    send_command_standard(addr, QUERY_SCENE_LEVEL + scene);
+    uint8_t scene_level = encoder.recv();
+    send_command_special(DTR0, scene_level);
 
+    // Store what is in the temperorary color as scene color and also scene level to DTR0
+    send_twice(addr, STORE_DTR_AS_SCENE + scene);
+}
+    
+void DALIDriver::set_color(uint8_t addr, uint8_t r, uint8_t g, uint8_t b, uint8_t dim)
+{
+    set_color_temp(addr, r, g, b, dim);
     // Activate color
     //send command to enable device type 8
     send_command_special(ENABLE_DEVICE_TYPE, 0x08);
@@ -214,6 +247,10 @@ void DALIDriver::remove_from_scene(uint8_t addr, uint8_t scene)
 void DALIDriver::go_to_scene(uint8_t addr, uint8_t scene)
 {
     send_twice(addr, GO_TO_SCENE + scene);
+    //send command to enable device type 8
+    send_command_special(ENABLE_DEVICE_TYPE, 0x08);
+    // Activate color scene
+    send_command_standard(addr, COLOR_ACTIVATE); 
 }
 
 event_msg DALIDriver::parse_event(uint32_t data)
