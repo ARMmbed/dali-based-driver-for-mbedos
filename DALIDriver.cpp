@@ -98,6 +98,16 @@ uint8_t DALIDriver::get_fade(uint8_t addr)
     return resp;
 }
 
+ColorType DALIDriver::get_color_type(uint8_t addr) {
+    uint8_t channels = query_rgbwaf_channels(addr);
+    if (channels == 4) {
+        return RGB;
+    } else if (query_temperature_capable(addr)) {
+        return TEMPERATURE;
+    }
+    return UNSUPPORTED;
+ } 
+
 uint8_t DALIDriver::query_color_type_features(uint8_t addr)
 {
     encoder.set_recv_frame_length(8);

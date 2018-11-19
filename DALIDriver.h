@@ -72,6 +72,7 @@ enum CommandOpCodes {
 };
 
 enum InstanceType { GENERIC = 0, OCCUPANCY = 3, LIGHT = 4, BUTTON = 1 };
+enum ColorType { RGB, TEMPERATURE, UNSUPPORTED };
 
 #define YES 0xFF
 
@@ -270,6 +271,8 @@ public:
     *
     */
     uint8_t query_color_type_features(uint8_t addr);
+
+    ColorType get_color_type(uint8_t addr);
 
     /** Query if the light is capable of color temperature
     *
