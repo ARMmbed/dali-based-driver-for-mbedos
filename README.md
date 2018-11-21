@@ -42,6 +42,43 @@ int main() {
 }
 ```
 
+## Example Usage - Colored lights
+
+```
+#include "mbed.h"
+#include "DALIDriver.h"
+
+int main() {
+    DALIDriver dali(D0, D2);
+    dali.init();
+    int num_devices = dali.get_num_lights();
+    printf("Devices on bus: %d\r\n", num_devices);
+    // Devices will be addressed [0, num_devices-1]
+
+    for(int i = 0; i < num_devices; i++) {
+        dali.turn_on(i);
+        uint8_t channels = dali.query_rgbwaf_channels(i);
+        printf("Channels for device %i: 0x%X\r\n", i, channels); 
+        if (channels == 4) {
+            printf("RGBD light\r\n");
+            // Set red light
+            dali.set_color(i, 255, 0, 0);
+            wait(3);
+            // Set green light
+            dali.set_color(i, 0, 255, 0);
+        }
+        else if (dali.query_temperature_capable(i)) {
+            printf("Temperature light\r\n");
+            // Set very warm color
+            dali.set_color(i, 2500);
+            wait(3);
+            // Set very cold color
+            dali.set_color(i, 7042);
+    }
+}
+```
+
+
 ## Example usage - Lights and sensors
 
 ```
