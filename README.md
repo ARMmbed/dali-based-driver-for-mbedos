@@ -109,7 +109,7 @@ int main() {
     // number of lights
     int num_lights = dali.get_num_lights();
     // number of input instances
-    int num_inputs = controller.get_num_inputs();
+    int num_inputs = dali.get_num_inputs();
     
     printf("Devices on bus: %d\r\n", num_lights + num_inputs);
     
