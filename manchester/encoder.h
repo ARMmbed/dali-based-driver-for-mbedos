@@ -18,6 +18,8 @@
 
 #include "mbed.h"
 
+#define DONE_FLAG (1UL << 0)
+
 struct event_msg {
     uint8_t addr;
     uint8_t inst_type;
@@ -72,6 +74,7 @@ private:
     bool _idle_state;
     Timeout t1;
     Timeout t2;
+    EventFlags event_flags;
 
     Callback<void(uint32_t)> _sensor_event_cb;
     Callback<void(uint32_t)> _sensor_event_cb_save;

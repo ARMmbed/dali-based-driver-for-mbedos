@@ -127,6 +127,8 @@ void ManchesterEncoder::attach(mbed::Callback<void(uint32_t)> status_cb)
 
 void ManchesterEncoder::detach()
 {
+    // Wait for the done flag or 100 ms max 
+    event_flags.wait_all(DONE_FLAG, 100);
     bit_recv_total = 8;
     if (_sensor_event_cb) {
         _sensor_event_cb_save = _sensor_event_cb;
@@ -156,6 +158,7 @@ void ManchesterEncoder::stop()
     // Call sensor event handler
     if (_sensor_event_cb)
         _sensor_event_cb(recv_data);
+    event_flags.set(DONE_FLAG);
     _input_pin.rise(callback(this, &ManchesterEncoder::rise_handler));
 }
 
